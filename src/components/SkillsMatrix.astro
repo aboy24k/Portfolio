@@ -51,6 +51,11 @@ const tapeStyles = ['tape-kraft', 'tape-dots', 'tape-grid', 'tape-kraft', 'tape-
                 )}
               </li>
             ))}
+            {(group.plain ?? []).map((skill) => (
+              <li>
+                <span class="pin pin-static">{skill}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </section>

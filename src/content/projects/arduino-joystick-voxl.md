@@ -12,6 +12,7 @@ tags:
   - Autodesk Inventor
   - 3D Printing
 alsoUses:
+  - C
   - ESC Integration
   - Circuit Design
   - Rapid Prototyping

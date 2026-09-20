@@ -2,6 +2,7 @@
 title: Articulated robotic and prosthetic hand
 summary: Finger-joint linkage kinematics, a power distribution schematic, and Python motion-tracking control for multi-joint articulation.
 # context: add the course or team here
+period: July 2026 to present
 order: 2
 tags:
   - Autodesk Inventor
@@ -11,6 +12,7 @@ tags:
   - Power Circuitry
 alsoUses:
   - Motion Tracking
+  - Linkage Design
   - Circuit Design
   - Mechatronics
 # PHOTO: put an image in public/images/ and point to it here.
@@ -25,6 +27,6 @@ caption: finger linkage, v1
 
 An articulated hand that covers mechanics, electronics, and software in one design.
 
-- **Mechanical.** 3D CAD models in Autodesk Inventor, with the finger joint linkages worked out through kinematics.
-- **Electrical.** A schematic and circuit layout for power distribution, drawn in KiCAD.
-- **Software.** Python motion-tracking control code that drives multi-joint articulation.
+- **Mechanical.** 3D CAD models and mechanical assemblies in Autodesk Inventor, refining the finger joint kinematics and linkage movement for realistic articulation.
+- **Electrical.** A schematic and circuit layout for the robotic arm's power distribution, drawn in KiCAD.
+- **Software.** Python motion-tracking control code that processes sensor inputs and commands multi-joint articulation.

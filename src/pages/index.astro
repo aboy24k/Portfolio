@@ -216,7 +216,7 @@ const skillLabel = `${skillCount} skills, ${languageCount} languages`;
       aria-labelledby="experience-title"
       id="experience"
     >
-      <SectionHeading id="experience-title" title="Experience and education" label="co-op and degree" />
+      <SectionHeading id="experience-title" title="Experience and education" label="trip, co-op and degree" />
 
       <ol class="timeline mt-14 max-w-3xl">
         {
@@ -246,16 +246,17 @@ const skillLabel = `${skillCount} skills, ${languageCount} languages`;
                     </div>
                     <div class="ticket-side" aria-hidden="true">
                       <span class="barcode"></span>
-                      <span>co-op</span>
+                      <span>{item.stub ?? 'co-op'}</span>
                     </div>
                   </div>
                 ) : (
                   <div class="index-card on-paper">
                     <h3 class="m-0 text-2xl font-bold leading-tight tracking-tight">{item.title}</h3>
-                    <p class="m-0 mt-1 text-muted">
-                      {item.org}
-                      {item.period ? `, ${item.period}` : ''}
-                    </p>
+                    {(item.org || item.period) && (
+                      <p class="m-0 mt-1 text-muted">
+                        {[item.org, item.period].filter(Boolean).join(', ')}
+                      </p>
+                    )}
                     {item.badges && (
                       <ul class="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
                         {item.badges.map((b) => (
@@ -263,6 +264,7 @@ const skillLabel = `${skillCount} skills, ${languageCount} languages`;
                         ))}
                       </ul>
                     )}
+                    {item.note && <p class="m-0 mt-4 max-w-[62ch] text-[0.95rem]">{item.note}</p>}
                   </div>
                 )}
               </div>

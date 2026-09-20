@@ -17,8 +17,8 @@ export const profile = {
   headline:
     'Mechanical & Mechatronics Engineering Student (GPA: 4.0) | Anderson University',
   intro:
-    'I like the moment a design leaves the screen: a printed part that fits, a signal that finally decodes, a joint that closes when the code says it should. I work across CAD, embedded electronics, and Python.',
-  seeking: 'Hands-on mechanical and robotics internships',
+    'I like the moment a design leaves the screen: a printed part that fits, a signal that finally decodes, a joint that closes when the code says it should. I work across CAD modeling, rapid prototyping, and sensor integration with Python, Arduino, and oscilloscopes.',
+  seeking: 'A summer robotics or mechanical engineering internship',
   focus: [
     'Kinematics',
     'Dynamic controls testing',
@@ -29,10 +29,9 @@ export const profile = {
   ],
 
   email: 'aaprasanth@anderson.edu',
-  // TODO: replace with your real LinkedIn profile URL.
-  linkedin: 'https://www.linkedin.com/in/YOUR-LINKEDIN-HANDLE',
+  linkedin: 'https://www.linkedin.com/in/abhishek-prasanth-055037322',
   location: 'Anderson, IN',
-  // Drop your PDF at public/resume.pdf (or change this path).
+  // The Download button serves public/resume.pdf.
   resume: 'resume.pdf',
 } as const;
 
@@ -40,20 +39,29 @@ export const profile = {
  * SKILLS MATRIX
  * Each skill is a pin. Clicking one highlights every project whose `tags` or
  * `alsoUses` frontmatter contains the same word (case-insensitive).
- * Spoken languages are not linked to projects, so they are display-only.
+ * `plain` skills are display-only pins (no project is tagged with them yet),
+ * and spoken languages are display-only too.
  */
 export interface SkillGroup {
   title: string;
   note?: string;
   interactive: boolean;
   skills: string[];
+  plain?: string[];
 }
 
 export const skillGroups: SkillGroup[] = [
   {
     title: 'CAD and mechanical',
     interactive: true,
-    skills: ['Autodesk Inventor', 'AutoCAD', 'Kinematics', 'Tolerancing'],
+    skills: [
+      'Autodesk Inventor',
+      'AutoCAD',
+      'Kinematics',
+      'Linkage Design',
+      'Technical Drawing',
+      'Tolerancing',
+    ],
   },
   {
     title: 'Embedded systems',
@@ -86,6 +94,7 @@ export const skillGroups: SkillGroup[] = [
     interactive: true,
     skills: [
       'Python',
+      'C',
       'C++',
       'Pandas',
       'REST APIs',
@@ -94,14 +103,18 @@ export const skillGroups: SkillGroup[] = [
       'Motion Tracking',
       'PX4 and QGroundControl',
     ],
+    plain: ['Java'],
   },
   {
     title: 'Analysis and planning',
     interactive: true,
     skills: [
+      'Dynamics Analysis',
       'Spreadsheet Modeling',
       'Financial Modeling',
       'Decision Matrices',
+      'Site Evaluation',
+      'ADA Standards',
       'Project Management',
       'Technical Writing',
     ],
@@ -109,7 +122,14 @@ export const skillGroups: SkillGroup[] = [
   {
     title: 'Fabrication',
     interactive: true,
-    skills: ['3D Printing', 'Shop Machining', 'Hand Soldering', 'Rapid Prototyping'],
+    skills: [
+      '3D Printing',
+      'Laser Cutting',
+      'Shop Machining',
+      'Wood Construction',
+      'Hand Soldering',
+      'Rapid Prototyping',
+    ],
   },
   {
     title: 'Languages',
@@ -120,8 +140,8 @@ export const skillGroups: SkillGroup[] = [
 ];
 
 /**
- * EXPERIENCE AND EDUCATION TIMELINE
- * `period` is optional. Fill it in (e.g. "2023 to present") and it will appear.
+ * EXPERIENCE AND EDUCATION TIMELINE (most recent first)
+ * `period` is optional. `note` is one line of extra text on an index card.
  * `projectId` links an entry to a case study (the .md filename without ".md").
  */
 export interface TimelineEntry {
@@ -131,21 +151,36 @@ export interface TimelineEntry {
   period?: string;
   badges?: string[];
   bullets?: string[];
+  note?: string;
+  // Small word printed on the ticket stub of an experience entry (default: co-op).
+  stub?: string;
   projectId?: string;
 }
 
 export const timeline: TimelineEntry[] = [
   {
     kind: 'experience',
-    title: 'Engineering Co-op',
-    org: 'Leo Flight',
-    // TODO: period: 'Summer 2025',
-    period: '',
+    title: 'Engineering Mission Trip',
+    org: 'Costa Rica',
+    period: 'January 2026 to May 2026',
     bullets: [
-      'Designed and 3D printed a gyroscope test rig with tight tolerances.',
-      'Built a Python tool that streams real-time dynamic motion telemetry.',
-      'Analyzed SBUS protocol signals on a digital oscilloscope.',
-      'Hand-soldered wiring harnesses and integrated ESCs.',
+      'Calculated electrical power load profiles and evaluated solar irradiance data to design an off-grid PV system for tropical field conditions.',
+      'Simulated circuit behavior in LTspice and drafted standardized system schematics for modular replication across future community installations.',
+      'Managed the project budget and field logistics to source components, build hardware, and present technical proposals to local leadership.',
+    ],
+    stub: 'trip',
+    projectId: 'costa-rica-solar-pv',
+  },
+  {
+    kind: 'experience',
+    title: 'Flight Controls and Hardware Co-op (Intern)',
+    org: 'Leo Flight and Anderson University, Indiana',
+    period: 'May 2024 to present',
+    bullets: [
+      'Designed and 3D printed a gyroscope test rig with precise dimensional tolerances for flight stabilization testing.',
+      'Built a real-time motion telemetry tool in Python to track dynamic controls and flight stability metrics.',
+      'Analyzed SBUS protocol controller signals and debugged Arduino hardware interfaces with a digital oscilloscope.',
+      'Hand-soldered wiring harnesses and integrated electronic speed controllers (ESCs) for power delivery and motor regulation.',
     ],
     projectId: 'flight-controls-gyro-rig',
   },
@@ -153,8 +188,14 @@ export const timeline: TimelineEntry[] = [
     kind: 'education',
     title: 'BS Mechanical Engineering',
     org: 'Anderson University',
-    // TODO: period: '2023 to 2027',
-    period: '',
-    badges: ['4.0 GPA', "Dean's List", 'Honors Program'],
+    period: 'August 2024 to May 2028',
+    badges: ['4.0 GPA', "Dean's List", 'Honors Program Scholar'],
+    note: 'Coursework: Kinematics and Robotics, Signals and Controls, Dynamics, Solid Mechanics, Digital Electronics, Circuit Analysis, Differential Equations, Linear Algebra.',
+  },
+  {
+    kind: 'education',
+    title: 'Certifications',
+    org: '',
+    badges: ['Python, Scope India', 'Arduino and Robotics, MyRobo Trivandrum, India'],
   },
 ];

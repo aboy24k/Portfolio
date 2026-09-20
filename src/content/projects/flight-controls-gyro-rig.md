@@ -2,7 +2,7 @@
 title: Flight controls and gyroscope test rig
 summary: A 3D-printed gyroscope test rig, a live Python telemetry tool, and SBUS signal analysis for a flight-controls co-op.
 context: Co-op at Leo Flight and Anderson University
-# period: Summer 2025   <- uncomment and edit
+period: May 2024 to present
 order: 1
 tags:
   - Autodesk Inventor
@@ -39,10 +39,10 @@ caption: gyro rig, on the bench
 
 A physical test rig for a gyroscope, built during a flight-controls co-op. The work covered the whole chain from the printed hardware to the signal on the wire to the software that displays it.
 
-- **Rig design.** Modeled in Autodesk Inventor and 3D printed to tight tolerances.
-- **Telemetry.** A Python tool that shows real-time dynamic motion data from the rig.
-- **Signal analysis.** SBUS signals captured and decoded on a digital oscilloscope.
-- **Electronics.** Hand-soldered harnesses, Arduino, and ESC integration.
+- **Rig design.** Modeled in Autodesk Inventor and 3D printed to tight tolerances for flight stabilization testing.
+- **Telemetry.** A Python tool that shows real-time dynamic motion data from the rig and tracks dynamic controls and flight stability metrics.
+- **Signal analysis.** SBUS controller signals captured and decoded on a digital oscilloscope, and the Arduino hardware interfaces debugged with it.
+- **Electronics.** Hand-soldered harnesses, Arduino, and ESC integration for power delivery and motor regulation.
 
 ## Field notes: the SBUS frame
 

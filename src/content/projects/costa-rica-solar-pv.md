@@ -2,6 +2,7 @@
 title: Off-grid community solar PV system
 summary: Load profiles, irradiance data, and LTspice simulation behind a portable off-grid solar generator, built and documented with a standardized schematic and user manual for Costa Rica.
 context: Costa Rica mission
+period: January 2026 to May 2026
 order: 3
 tags:
   - LTspice
@@ -35,6 +36,7 @@ The engineering behind an off-grid solar system for a community in Costa Rica, d
 - **Solar resource.** Worked with solar irradiance data for tropical field conditions.
 - **Simulation.** Modeled circuit behavior in LTspice before anything was built.
 - **Replication.** Drafted standardized system schematics so the design is modular and repeatable.
+- **Budget and logistics.** Managed the project budget and field logistics to source components, build hardware, and present technical proposals to local leadership.
 - **The build.** A working portable generator: two 200 W panels, an MPPT charge controller, six lithium batteries behind two DC breakers, and a 2000 W inverter.
 - **The manual.** A step-by-step user manual with safety rules, commissioning steps and a maintenance schedule.
 
