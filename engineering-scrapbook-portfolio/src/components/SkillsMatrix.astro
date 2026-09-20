@@ -1,0 +1,135 @@
+---
+/**
+ * Interactive skills matrix.
+ * Click a pin: the panel below lists the projects that use it (each opens its
+ * case study), and the project cards above highlight or dim to match.
+ *
+ * Skill names come from src/data/profile.ts. Matching is against each project's
+ * `tags` and `alsoUses` frontmatter, case-insensitive.
+ *
+ * The script also controls #filter-status in index.astro (the "Highlighting..." line).
+ */
+import { skillGroups } from '../data/profile';
+
+// A slight tilt and a different tape for every group, like each was stuck down separately.
+const rotations = [-0.8, 0.6, -0.4, 0.9, -0.7, 0.5];
+// (plain, dotted and grid tapes only: stripes make the handwritten label hard to read)
+const tapeStyles = ['tape-kraft', 'tape-dots', 'tape-grid', 'tape-kraft', 'tape-dots', 'tape-grid'];
+---
+
+<p class="hand mt-8 flex items-center gap-2 text-2xl text-muted">
+  <svg viewBox="0 0 40 24" width="40" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+    <path d="M2 20C10 20 14 6 30 5M30 5l-7-3M30 5l-5 6"></path>
+  </svg>
+  tap a pin to see where I used it
+</p>
+
+<div class="mt-12 grid items-start gap-x-8 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
+  {
+    skillGroups.map((group, i) => (
+      <section
+        class="view-wrap drop on-paper"
+        style={`--r:${rotations[i % rotations.length]}deg`}
+        aria-labelledby={`skill-group-${i}`}
+      >
+        <h3
+          class={`tape tape-label ${tapeStyles[i % tapeStyles.length]} tape-top`}
+          id={`skill-group-${i}`}
+        >
+          {group.title}
+        </h3>
+        <div class="view-paper" data-variant={i % 6}>
+          <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
+            {group.skills.map((skill) => (
+              <li>
+                {group.interactive ? (
+                  <button type="button" class="pin" aria-pressed="false" data-skill={skill}>
+                    {skill}
+                  </button>
+                ) : (
+                  <span class="pin pin-static">{skill}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    ))
+  }
+</div>
+
+<div
+  class="postit on-paper mt-12 flex min-h-20 max-w-3xl flex-wrap items-center gap-x-4 gap-y-3 px-6 py-5"
+  style="rotate: -0.6deg;"
+  id="skill-result"
+  role="status"
+  aria-live="polite"
+>
+  <p class="m-0 font-medium" id="skill-result-text">Pick a skill to see which projects it shows up in.</p>
+  <div class="flex flex-wrap gap-2" id="skill-result-links"></div>
+  <button type="button" class="btn ml-auto" id="skill-clear" hidden>Clear selection</button>
+</div>
+
+<script>
+  const pins = document.querySelectorAll<HTMLButtonElement>('.pin[data-skill]');
+  const cards = document.querySelectorAll<HTMLElement>('article.card');
+  const text = document.getElementById('skill-result-text')!;
+  const links = document.getElementById('skill-result-links')!;
+  const clearBtn = document.getElementById('skill-clear')!;
+  const status = document.getElementById('filter-status');
+  const statusText = document.getElementById('filter-status-text');
+  const statusClear = document.getElementById('filter-status-clear');
+
+  const IDLE_TEXT = 'Pick a skill to see which projects it shows up in.';
+
+  function clear() {
+    pins.forEach((p) => p.setAttribute('aria-pressed', 'false'));
+    cards.forEach((c) => c.removeAttribute('data-match'));
+    text.textContent = IDLE_TEXT;
+    links.replaceChildren();
+    clearBtn.hidden = true;
+    if (status) status.hidden = true;
+  }
+
+  function select(pin: HTMLButtonElement) {
+    const skill = pin.dataset.skill!;
+    const key = skill.toLowerCase();
+
+    pins.forEach((p) => p.setAttribute('aria-pressed', String(p === pin)));
+
+    const matches: HTMLElement[] = [];
+    cards.forEach((card) => {
+      const hit = (card.dataset.keys ?? '').split('|').includes(key);
+      card.dataset.match = String(hit);
+      if (hit) matches.push(card);
+    });
+
+    links.replaceChildren();
+    if (matches.length === 0) {
+      text.textContent = `No case study is tagged with ${skill} yet.`;
+    } else {
+      text.textContent = `${skill} shows up in ${matches.length === 1 ? '1 project' : `${matches.length} projects`}:`;
+      matches.forEach((card) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn';
+        b.dataset.openProject = card.dataset.project;
+        b.textContent = card.dataset.title ?? '';
+        links.append(b);
+      });
+    }
+    clearBtn.hidden = false;
+    if (status && statusText) {
+      statusText.textContent = `Highlighting projects that use ${skill}.`;
+      status.hidden = false;
+    }
+  }
+
+  pins.forEach((pin) =>
+    pin.addEventListener('click', () => {
+      pin.getAttribute('aria-pressed') === 'true' ? clear() : select(pin);
+    }),
+  );
+  clearBtn.addEventListener('click', clear);
+  statusClear?.addEventListener('click', clear);
+</script>

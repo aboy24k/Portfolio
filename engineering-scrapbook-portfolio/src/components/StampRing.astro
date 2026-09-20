@@ -1,0 +1,40 @@
+---
+/**
+ * Round rubber stamp with text running around the rim and a gear in the middle.
+ * Give it size and position from the parent with a class (e.g. "absolute -top-6 -right-3").
+ */
+interface Props {
+  class?: string;
+  ring: string;
+}
+const { class: className = '', ring } = Astro.props;
+---
+
+<svg
+  class:list={['stamp-ring', className]}
+  viewBox="0 0 120 120"
+  width="120"
+  height="120"
+  role="img"
+  aria-label={ring}
+>
+  <defs>
+    <path id="stamp-rim" d="M60 60 m-43 0 a43 43 0 1 1 86 0 a43 43 0 1 1 -86 0"></path>
+  </defs>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="currentColor" stroke-width="2.5"></circle>
+  <circle cx="60" cy="60" r="31" fill="none" stroke="currentColor" stroke-width="1.2"></circle>
+  <text
+    font-family="'IBM Plex Mono', ui-monospace, monospace"
+    font-size="10.5"
+    font-weight="500"
+    fill="currentColor"
+  >
+    <textPath href="#stamp-rim" textLength="266" lengthAdjust="spacing">{ring}</textPath>
+  </text>
+  <!-- gear: a dashed thick circle makes the teeth -->
+  <g fill="none" stroke="currentColor">
+    <circle cx="60" cy="60" r="17" stroke-width="6" stroke-dasharray="6.675 6.675"></circle>
+    <circle cx="60" cy="60" r="14" stroke-width="2.4"></circle>
+    <circle cx="60" cy="60" r="6" stroke-width="2.4"></circle>
+  </g>
+</svg>

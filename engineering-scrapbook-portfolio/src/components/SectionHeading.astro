@@ -1,0 +1,23 @@
+---
+/**
+ * Section title in brush script, a black label-maker strip beside it, and a
+ * dimension line that runs off to the edge of the sheet.
+ */
+interface Props {
+  id: string;
+  title: string;
+  label?: string;
+}
+const { id, title, label } = Astro.props;
+---
+
+<div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+  <h2
+    id={id}
+    class="script inline-block -rotate-2 text-[2.7rem] leading-[1.15] text-amber sm:text-[3.6rem]"
+  >
+    {title}
+  </h2>
+  {label && <span class="strip">{label}</span>}
+  <span class="dimline" aria-hidden="true"></span>
+</div>

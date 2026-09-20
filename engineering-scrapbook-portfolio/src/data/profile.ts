@@ -6,9 +6,9 @@
  */
 
 export const profile = {
-  name: 'Abhishek Tijo Andrew Prasanth',
+  name: 'Abhishek Tjo Andrew Prasanth',
   // Line breaks for the big hero title (purely visual).
-  nameLines: ['Abhishek Tijo', 'Andrew Prasanth'],
+  nameLines: ['Abhishek Tjo', 'Andrew Prasanth'],
   role: 'Mechanical & Mechatronics Engineering Student',
   school: 'Anderson University',
   gpa: '4.0',
@@ -77,8 +77,7 @@ export const skillGroups: SkillGroup[] = [
       'Power Circuitry',
       'PV Solar Systems',
       'Solar Load Profiling',
-      'Battery Systems',
-      'MPPT Charge Controllers',
+      'Project Management',
     ],
   },
   {
@@ -93,17 +92,6 @@ export const skillGroups: SkillGroup[] = [
       'Dynamic Controls Testing',
       'Motion Tracking',
       'PX4 and QGroundControl',
-    ],
-  },
-  {
-    title: 'Analysis and planning',
-    interactive: true,
-    skills: [
-      'Spreadsheet Modeling',
-      'Financial Modeling',
-      'Decision Matrices',
-      'Project Management',
-      'Technical Writing',
     ],
   },
   {

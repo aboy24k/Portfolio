@@ -1,0 +1,44 @@
+---
+/**
+ * Blueprint-style stand-in shown until a project has a `cover` image.
+ * To replace it: add `cover: images/your-photo.jpg` to the project's frontmatter
+ * (file goes in public/images/).
+ */
+interface Props {
+  label?: string;
+  uid: string; // unique per instance so the SVG pattern id never repeats on the page
+}
+const { label = 'photo goes here', uid } = Astro.props;
+---
+
+<svg
+  class="fill"
+  viewBox="0 0 400 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label={label}
+  preserveAspectRatio="xMidYMid slice"
+>
+  <defs>
+    <pattern id={`grid-${uid}`} width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#c5d2e4" stroke-width="1"></path>
+    </pattern>
+  </defs>
+  <rect width="400" height="300" fill="#e3eaf4"></rect>
+  <rect width="400" height="300" fill={`url(#grid-${uid})`}></rect>
+  <g fill="none" stroke="#1d5fd1" stroke-width="1.5">
+    <circle cx="200" cy="115" r="42"></circle>
+    <circle cx="200" cy="115" r="4" fill="#1d5fd1"></circle>
+    <path d="M135 115H265M200 55V175" stroke-dasharray="10 4 2 4"></path>
+    <!-- dimension line -->
+    <path d="M154 200H246M154 194V206M246 194V206"></path>
+  </g>
+  <text
+    x="200"
+    y="226"
+    text-anchor="middle"
+    font-family="ui-monospace, Menlo, Consolas, monospace"
+    font-size="13"
+    fill="#1d5fd1">{label}</text
+  >
+</svg>

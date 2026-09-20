@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 390" width="760" height="390" role="img" aria-labelledby="t">
+  <title id="t">Worksheet flow inside the feasibility tool: inputs, system sizing, cost calculator, electric analysis, maintenance, financial analysis, main dashboard, with a utility pricing sheet feeding electric analysis</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#e8590c"/>
+    </marker>
+  </defs>
+  <rect width="760" height="390" fill="#fffefb"/>
+  <g font-family="ui-monospace, Menlo, Consolas, monospace" fill="#1e293b">
+    <text x="20" y="26" font-size="13" fill="#59657a">Worksheet flow inside the Google Sheet</text>
+
+    <!-- row 1 -->
+    <g stroke="#1d5fd1" stroke-width="2.5" fill="#fffefb">
+      <rect x="20" y="88" width="160" height="72" rx="3"/>
+      <rect x="210" y="88" width="160" height="72" rx="3"/>
+      <rect x="400" y="88" width="160" height="72" rx="3"/>
+      <rect x="590" y="88" width="150" height="72" rx="3"/>
+    </g>
+    <!-- utility pricing feeding electric analysis -->
+    <rect x="590" y="12" width="150" height="46" rx="3" fill="#fffefb" stroke="#1d5fd1" stroke-width="2" stroke-dasharray="7 5"/>
+    <!-- row 2 -->
+    <g stroke="#1d5fd1" stroke-width="2.5" fill="#fffefb">
+      <rect x="20" y="260" width="160" height="72" rx="3"/>
+      <rect x="210" y="260" width="160" height="72" rx="3"/>
+      <rect x="400" y="260" width="160" height="72" rx="3" fill="#e3eaf4"/>
+    </g>
+
+    <!-- arrows -->
+    <g stroke="#e8590c" stroke-width="3" fill="none">
+      <path d="M182 124H206" marker-end="url(#a)"/>
+      <path d="M372 124H396" marker-end="url(#a)"/>
+      <path d="M562 124H586" marker-end="url(#a)"/>
+      <path d="M665 60V84" marker-end="url(#a)"/>
+      <path d="M665 162V210H100V256" marker-end="url(#a)"/>
+      <path d="M182 296H206" marker-end="url(#a)"/>
+      <path d="M372 296H396" marker-end="url(#a)"/>
+    </g>
+
+    <g font-size="12.5" font-weight="700" text-anchor="middle">
+      <text x="100" y="118">INPUTS</text>
+      <text x="290" y="118">SYSTEM_SIZING</text>
+      <text x="480" y="118">COST_CALCULATOR</text>
+      <text x="665" y="118">ELECTRIC_ANALYSIS</text>
+      <text x="100" y="290">MAINTENANCE</text>
+      <text x="290" y="290">FINANCIAL_ANALYSIS</text>
+      <text x="480" y="290">MAIN_DASHBOARD</text>
+    </g>
+    <g font-size="11.5" text-anchor="middle" fill="#3b4a63">
+      <text x="100" y="138">site, bills, hardware,</text>
+      <text x="100" y="153">prices</text>
+      <text x="290" y="138">panels, batteries,</text>
+      <text x="290" y="153">inverters</text>
+      <text x="480" y="138">installed cost</text>
+      <text x="480" y="153">and cost per watt</text>
+      <text x="665" y="138">today's utility bill</text>
+      <text x="665" y="153">without solar</text>
+      <text x="100" y="310">panel aging and</text>
+      <text x="100" y="325">replacement costs</text>
+      <text x="290" y="310">cash flow, payback,</text>
+      <text x="290" y="325">lifetime return</text>
+      <text x="480" y="310">the answer</text>
+      <text x="480" y="325">on one page</text>
+      <text x="665" y="30" font-weight="700" font-size="11.5" fill="#1e293b">Utility pricing +</text>
+      <text x="665" y="46">bill calculator</text>
+    </g>
+  </g>
+</svg>

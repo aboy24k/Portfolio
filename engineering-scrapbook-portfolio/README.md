@@ -47,16 +47,6 @@ links:
 ...
 ```
 
-### Downloads
-
-Put PDFs in `public/downloads/` and link them from a project's frontmatter, for example:
-
-```yaml
-links:
-  - label: Read the manual (PDF)
-    url: downloads/my-manual.pdf
-```
-
 ### Photos and figures
 
 - **Card photo:** put the image in `public/images/` and set `cover: images/your-file.jpg` in the frontmatter. An `.svg` works too.
