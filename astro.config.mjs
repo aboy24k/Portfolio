@@ -22,8 +22,8 @@ import tailwindcss from '@tailwindcss/vite';
  * (In the repo: Settings -> Pages -> Source -> "GitHub Actions".)
  */
 export default defineConfig({
-  site: 'https://YOUR-GITHUB-USERNAME.github.io',
-  base: '/YOUR-REPO-NAME',
+  site: 'https://portfolio.vercel.app',
+  base: '/',
 
   vite: {
     // Tailwind CSS v4 runs as a Vite plugin (no tailwind.config.js needed).
