@@ -39,6 +39,12 @@ const projects = defineCollection({
     // Buttons at the bottom of the modal (repo, demo, report PDF...).
     links: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
 
+    // Optional video shown in the case-study modal. Put the file in public/videos/
+    // (mp4, muted is fine) and a still image in public/images/ for the poster.
+    video: z.string().optional(),
+    poster: z.string().optional(),
+    videoCaption: z.string().optional(),
+
     // Lower numbers come first.
     order: z.number().default(99),
     // Set to true to hide a project without deleting the file.

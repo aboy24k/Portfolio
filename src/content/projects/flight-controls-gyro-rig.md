@@ -19,10 +19,12 @@ alsoUses:
   - Rapid Prototyping
   - 3D Printing
   - Mechatronics
-# PHOTO: put an image in public/images/ and point to it here (no leading slash needed).
-# cover: images/gyro-rig.jpg
-coverAlt: The gyroscope test rig on a workbench
-caption: gyro rig, on the bench
+cover: images/gyro-rig-cover.jpg
+coverAlt: "Two views of the final gyroscope test rig: black 3D-printed rings nested inside each other and turning on bearings, with a hand rotating one of them"
+caption: the final rig
+video: videos/gyro-rig-final.mp4
+poster: images/gyro-rig-poster.jpg
+videoCaption: the final rig, turned by hand
 # Add repo / report links here, e.g.:
 # links:
 #   - label: View report (PDF)
@@ -44,9 +46,17 @@ A physical test rig for a gyroscope, built during a flight-controls co-op. The w
 - **Signal analysis.** SBUS controller signals captured and decoded on a digital oscilloscope, and the Arduino hardware interfaces debugged with it.
 - **Electronics.** Hand-soldered harnesses, Arduino, and ESC integration for power delivery and motor regulation.
 
+## The final version
+
+The finished rig is a set of nested, 3D-printed rings that each turn freely on bearings, so it can be rotated about several axes by hand. The video above shows it moving.
+
 ## Field notes: the SBUS frame
 
 SBUS is the serial protocol RC receivers use to hand channel data to a flight controller. These are reference notes on the format, the kind of thing worth having beside the scope.
+
+![Oscilloscope trace of the start of an SBUS frame, beginning with the header byte 0x0F](../../assets/projects/flight-controls/sbus-trace.svg)
+
+*An SBUS frame redrawn from its bytes. Every frame opens with 0x0F.*
 
 | Bytes | Contents |
 | --- | --- |

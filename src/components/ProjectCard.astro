@@ -159,6 +159,24 @@ const keys = [...data.tags, ...data.alsoUses].map((t) => t.toLowerCase());
           {data.tags.map((tag) => <li class="tag">{tag}</li>)}
         </ul>
 
+        {
+          data.video && (
+            <figure class="case-video m-0 mt-6 flex flex-col items-center">
+              <video
+                controls
+                playsinline
+                preload="metadata"
+                poster={data.poster ? withBase(data.poster) : undefined}
+                src={withBase(data.video)}
+                aria-label={data.videoCaption ?? `${data.title}, video`}
+              >
+                Your browser cannot play this video.
+              </video>
+              {data.videoCaption && <figcaption>{data.videoCaption}</figcaption>}
+            </figure>
+          )
+        }
+
         <div class="case-body mt-6">
           <slot />
         </div>

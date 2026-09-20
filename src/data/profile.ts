@@ -28,6 +28,15 @@ export const profile = {
     'PV solar systems',
   ],
 
+  // The photo in the hero. To change it, replace public/images/hero.jpg with any photo of
+  // you (a 4:5 portrait crop, about 900 px wide, works best) and edit the alt text and caption.
+  heroPhoto: {
+    src: 'images/hero.jpg',
+    alt: 'Abhishek crouching beside the trebuchet as it launches a tennis ball',
+    caption: "watching the trebuchet's test launch",
+    aspect: '4 / 5',
+  },
+
   email: 'aaprasanth@anderson.edu',
   linkedin: 'https://www.linkedin.com/in/abhishek-prasanth-055037322',
   location: 'Anderson, IN',

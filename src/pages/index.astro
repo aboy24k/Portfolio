@@ -9,7 +9,6 @@
 import { getCollection, render } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import Scope from '../components/Scope.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import SkillsMatrix from '../components/SkillsMatrix.astro';
 import StampRing from '../components/StampRing.astro';
@@ -123,15 +122,23 @@ const skillLabel = `${skillCount} skills, ${languageCount} languages`;
           </div>
         </div>
 
-        <!-- Taped-in print of the scope, with a rubber stamp on the corner. -->
+        <!-- A taped-in photo, with a rubber stamp on the corner. The photo, alt text and
+             caption come from `heroPhoto` in src/data/profile.ts (file: public/images/hero.jpg). -->
         <div class="relative pb-8 lg:col-span-5">
           <figure class="polaroid on-paper" style="--tilt: 1.6deg">
             <span class="tape tape-tl tape-stripe" aria-hidden="true"></span>
             <span class="tape tape-tr tape-kraft" aria-hidden="true"></span>
-            <div class="photo scope-photo">
-              <Scope />
+            <div class="photo" style={`aspect-ratio: ${profile.heroPhoto.aspect}`}>
+              <img
+                src={withBase(profile.heroPhoto.src)}
+                alt={profile.heroPhoto.alt}
+                width="900"
+                height="1125"
+                decoding="async"
+                fetchpriority="high"
+              />
             </div>
-            <figcaption class="has-stamp">an SBUS frame redrawn from its bytes. Every frame opens with 0x0F.</figcaption>
+            <figcaption class="has-stamp">{profile.heroPhoto.caption}</figcaption>
           </figure>
           <StampRing
             class="absolute -bottom-9 -right-3 z-10 h-[6.5rem] w-[6.5rem] sm:h-[7.5rem] sm:w-[7.5rem]"
