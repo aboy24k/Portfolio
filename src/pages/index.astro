@@ -1,0 +1,312 @@
+---
+/**
+ * Single-page portfolio.
+ * Sections: hero, featured projects, skills matrix, experience and education.
+ *
+ * Personal details:  src/data/profile.ts
+ * Projects:          src/content/projects/*.md  (drop in a new file to add one)
+ */
+import { getCollection, render } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Scope from '../components/Scope.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import SkillsMatrix from '../components/SkillsMatrix.astro';
+import StampRing from '../components/StampRing.astro';
+import { profile, timeline, skillGroups } from '../data/profile';
+import { withBase } from '../lib/url';
+
+// Load projects, hide drafts, sort by frontmatter `order`, render each body for its modal.
+const entries = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const projects = await Promise.all(
+  entries.map(async (entry) => ({ entry, Content: (await render(entry)).Content })),
+);
+const projectIds = new Set(entries.map((e) => e.id));
+const year = new Date().getFullYear();
+
+// Small facts for the black label strips beside each section title.
+const projectLabel = `${projects.length} case ${projects.length === 1 ? 'study' : 'studies'}`;
+const skillCount = skillGroups.filter((g) => g.interactive).reduce((n, g) => n + g.skills.length, 0);
+const languageCount = skillGroups.filter((g) => !g.interactive).reduce((n, g) => n + g.skills.length, 0);
+const skillLabel = `${skillCount} skills, ${languageCount} languages`;
+---
+
+<Layout
+  title={`${profile.name}: Mechanical & Mechatronics Engineering`}
+  description={`${profile.role} at ${profile.school}. ${profile.focus.join(', ')}.`}
+>
+  <!-- ============================ TOP BAR ============================ -->
+  <header class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 pt-5 sm:px-8">
+    <nav aria-label="Sections" class="flex flex-wrap gap-x-4 gap-y-1 text-[0.92rem] font-semibold sm:gap-x-5 sm:text-[0.98rem]">
+      <a class="hover:text-cad" href="#projects">Projects</a>
+      <a class="hover:text-cad" href="#skills">Skills</a>
+      <a class="hover:text-cad" href="#experience">Experience</a>
+    </nav>
+    <button
+      type="button"
+      class="btn shrink-0 whitespace-nowrap !py-1.5 !text-sm"
+      id="theme-toggle"
+      aria-pressed="false"
+      title="Switch to blueprint theme"
+    >
+      Blueprint
+    </button>
+  </header>
+
+  <main>
+    <!-- ============================ HERO ============================ -->
+    <section id="top" class="relative mx-auto max-w-6xl px-5 pb-16 pt-10 sm:px-8 sm:pt-14">
+      <div class="grid items-start gap-16 lg:grid-cols-12 lg:gap-10">
+        <div class="lg:col-span-7 lg:pt-4">
+          <span class="strip">Portfolio, {year}</span>
+
+          <h1
+            class="mt-5 text-[clamp(2.3rem,6.2vw,4.4rem)] font-extrabold leading-[0.98] tracking-[-0.03em]"
+          >
+            {profile.nameLines.map((line) => <span class="block whitespace-nowrap">{line}</span>)}
+          </h1>
+
+          <p class="mt-6 max-w-[34ch] text-xl font-semibold leading-snug sm:text-2xl">
+            {profile.role}
+          </p>
+          <p class="mt-1 text-lg text-muted">{profile.school}</p>
+
+          <p class="mt-6 max-w-[58ch] text-[1.08rem]">{profile.intro}</p>
+
+          <ul class="chip-row m-0 mt-8 flex list-none flex-wrap items-center gap-3 p-0">
+            <li>
+              <a class="chip" href={`mailto:${profile.email}`}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"
+                  ><rect width="20" height="16" x="2" y="4" rx="2"></rect><path
+                    d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg
+                >
+                {profile.email}
+              </a>
+            </li>
+            <li>
+              <a class="chip" href={profile.linkedin} target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"
+                  ><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"
+                  ></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"
+                  ></circle></svg
+                >
+                LinkedIn
+              </a>
+            </li>
+            <li>
+              <span class="chip">
+                <svg viewBox="0 0 24 24" aria-hidden="true"
+                  ><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle
+                    cx="12"
+                    cy="10"
+                    r="3"></circle></svg
+                >
+                {profile.location}
+              </span>
+            </li>
+          </ul>
+
+          <!-- The resume button is a ticket stub. -->
+          <div class="drop mt-8 inline-block -rotate-1">
+            <a class="ticket" href={withBase(profile.resume)} download>
+              <span class="ticket-main">
+                <svg viewBox="0 0 24 24" aria-hidden="true"
+                  ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path
+                    d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg
+                >
+                Download resume
+              </span>
+              <span class="ticket-stub"><span class="barcode"></span>PDF</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Taped-in print of the scope, with a rubber stamp on the corner. -->
+        <div class="relative pb-8 lg:col-span-5">
+          <figure class="polaroid on-paper" style="--tilt: 1.6deg">
+            <span class="tape tape-tl tape-stripe" aria-hidden="true"></span>
+            <span class="tape tape-tr tape-kraft" aria-hidden="true"></span>
+            <div class="photo scope-photo">
+              <Scope />
+            </div>
+            <figcaption class="has-stamp">an SBUS frame redrawn from its bytes. Every frame opens with 0x0F.</figcaption>
+          </figure>
+          <StampRing
+            class="absolute -bottom-9 -right-3 z-10 h-[6.5rem] w-[6.5rem] sm:h-[7.5rem] sm:w-[7.5rem]"
+            ring="ANDERSON UNIVERSITY * MECHANICAL AND MECHATRONICS * "
+          />
+        </div>
+      </div>
+
+      <!-- Title block: the facts a recruiter scans for, laid out like the corner of a drawing. -->
+      <div class="drop relative mt-16 -rotate-[0.5deg]">
+        <span class="tape tape-tl tape-dots" style="left: -2.6rem; top: -0.9rem" aria-hidden="true"></span>
+        <span class="tape tape-tr tape-red" style="right: -2.6rem; top: -0.9rem" aria-hidden="true"></span>
+        <dl class="titleblock on-paper m-0">
+          <div>
+            <dt class="cell-label">Institution</dt>
+            <dd class="cell-value m-0">{profile.school}</dd>
+          </div>
+          <div>
+            <dt class="cell-label">Degree</dt>
+            <dd class="cell-value m-0">{profile.degree}</dd>
+          </div>
+          <div>
+            <dt class="cell-label">Looking for</dt>
+            <dd class="cell-value m-0">{profile.seeking}</dd>
+          </div>
+        </dl>
+      </div>
+      <p class="mt-5 max-w-[70ch] text-[0.95rem] text-muted">
+        Focus: {profile.focus.join(', ')}.
+      </p>
+    </section>
+
+    <!-- ============================ PROJECTS ============================ -->
+    <section
+      class="relative mx-auto max-w-6xl px-5 py-14 sm:px-8"
+      aria-labelledby="projects-title"
+      id="projects"
+    >
+      <span class="coffee right-[6%] top-2 hidden md:block" aria-hidden="true"></span>
+      <SectionHeading id="projects-title" title="Featured projects" label={projectLabel} />
+
+      <p
+        id="filter-status"
+        class="mt-5 flex flex-wrap items-center gap-3 border border-amber bg-card px-4 py-2 text-[0.95rem]"
+        role="status"
+        hidden
+      >
+        <span id="filter-status-text"></span>
+        <button type="button" class="underline hover:text-cad" id="filter-status-clear">
+          Clear highlight
+        </button>
+      </p>
+
+      <div class="relative mt-14 grid items-start gap-x-12 gap-y-20 md:grid-cols-2">
+        <!-- the fold down the middle of an open notebook -->
+        <span
+          class="pointer-events-none absolute inset-y-0 left-1/2 hidden w-16 -translate-x-1/2 md:block"
+          style="background: linear-gradient(90deg, transparent, rgb(var(--shadow) / 0.1) 50%, transparent);"
+          aria-hidden="true"
+        ></span>
+        {
+          projects.map(({ entry, Content }, i) => (
+            <div class="relative md:even:mt-20">
+              <ProjectCard project={entry} index={i}>
+                <Content />
+              </ProjectCard>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- ============================ SKILLS ============================ -->
+    <section class="mx-auto max-w-6xl px-5 py-14 sm:px-8" aria-labelledby="skills-title" id="skills">
+      <SectionHeading id="skills-title" title="Skills matrix" label={skillLabel} />
+      <SkillsMatrix />
+    </section>
+
+    <!-- ============================ EXPERIENCE ============================ -->
+    <section
+      class="mx-auto max-w-6xl px-5 py-14 sm:px-8"
+      aria-labelledby="experience-title"
+      id="experience"
+    >
+      <SectionHeading id="experience-title" title="Experience and education" label="co-op and degree" />
+
+      <ol class="timeline mt-14 max-w-3xl">
+        {
+          timeline.map((item, i) => (
+            <li data-kind={item.kind}>
+              <div class={`drop ${i % 2 === 0 ? '-rotate-[0.6deg]' : 'rotate-[0.6deg]'}`}>
+                {item.kind === 'experience' ? (
+                  <div class="ticket-card on-paper">
+                    <div class="ticket-body">
+                      <h3 class="m-0 text-2xl font-bold leading-tight tracking-tight">{item.title}</h3>
+                      <p class="m-0 mt-1 text-muted">
+                        {item.org}
+                        {item.period ? `, ${item.period}` : ''}
+                      </p>
+                      {item.bullets && (
+                        <ul class="mt-3 list-[square] pl-5 marker:text-cad">
+                          {item.bullets.map((b) => (
+                            <li class="my-1 max-w-[62ch] pl-1">{b}</li>
+                          ))}
+                        </ul>
+                      )}
+                      {item.projectId && projectIds.has(item.projectId) && (
+                        <button type="button" class="btn mt-4" data-open-project={item.projectId}>
+                          Read the case study
+                        </button>
+                      )}
+                    </div>
+                    <div class="ticket-side" aria-hidden="true">
+                      <span class="barcode"></span>
+                      <span>co-op</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div class="index-card on-paper">
+                    <h3 class="m-0 text-2xl font-bold leading-tight tracking-tight">{item.title}</h3>
+                    <p class="m-0 mt-1 text-muted">
+                      {item.org}
+                      {item.period ? `, ${item.period}` : ''}
+                    </p>
+                    {item.badges && (
+                      <ul class="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
+                        {item.badges.map((b) => (
+                          <li class="tag">{b}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="mx-auto max-w-6xl px-5 pb-12 pt-10 sm:px-8">
+    <div class="ruler -rotate-[0.4deg]" aria-hidden="true"></div>
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-4 text-[0.95rem] text-muted">
+      <p class="m-0">
+        {`© ${year} ${profile.name}. Built with Astro and Tailwind CSS.`}
+      </p>
+      <p class="m-0 flex gap-5">
+        <a class="underline hover:text-cad" href={`mailto:${profile.email}`}>{profile.email}</a>
+        <a class="underline hover:text-cad" href="#top">Back to top</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Paper / blueprint theme toggle. The saved choice is applied in <head> (Layout.astro).
+    const toggle = document.getElementById('theme-toggle') as HTMLButtonElement;
+    const root = document.documentElement;
+
+    function paint() {
+      const dark = root.dataset.theme === 'dark';
+      toggle.textContent = dark ? 'Paper' : 'Blueprint';
+      toggle.title = dark ? 'Switch to paper theme' : 'Switch to blueprint theme';
+      toggle.setAttribute('aria-pressed', String(dark));
+    }
+    paint();
+
+    toggle.addEventListener('click', () => {
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch {}
+      paint();
+    });
+  </script>
+</Layout>

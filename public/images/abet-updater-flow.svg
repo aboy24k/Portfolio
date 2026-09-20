@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" role="img" aria-labelledby="t">
+  <title id="t">Canvas assignments flow through a Python app into a Google Sheet, with a private academic plan lookup feeding the app</title>
+  <defs>
+    <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#c5d2e4" stroke-width="1"/>
+    </pattern>
+    <marker id="a" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#e8590c"/>
+    </marker>
+  </defs>
+  <rect width="600" height="400" fill="#e3eaf4"/>
+  <rect width="600" height="400" fill="url(#g)"/>
+  <g font-family="ui-monospace, Menlo, Consolas, monospace" fill="#1e293b">
+    <g stroke="#1d5fd1" stroke-width="2.5" fill="#fffefb">
+      <rect x="25" y="120" width="150" height="112" rx="3"/>
+      <rect x="225" y="120" width="150" height="112" rx="3"/>
+      <rect x="425" y="120" width="150" height="112" rx="3"/>
+      <rect x="225" y="296" width="150" height="70" rx="3" stroke-dasharray="7 5"/>
+    </g>
+    <g stroke="#e8590c" stroke-width="3" fill="none">
+      <path d="M179 176H219" marker-end="url(#a)"/>
+      <path d="M379 176H419" marker-end="url(#a)"/>
+      <path d="M300 292V238" marker-end="url(#a)"/>
+    </g>
+    <g font-size="15" font-weight="700" text-anchor="middle">
+      <text x="100" y="150">Canvas LMS</text>
+      <text x="300" y="150">Python app</text>
+      <text x="500" y="150">Google Sheet</text>
+      <text x="300" y="322">Academic plans</text>
+    </g>
+    <g font-size="12" text-anchor="middle" fill="#3b4a63">
+      <text x="100" y="175">assignments</text>
+      <text x="100" y="193">titled with</text>
+      <text x="100" y="211">SO1 to SO7</text>
+      <text x="300" y="175">score, grade,</text>
+      <text x="300" y="193">course, term,</text>
+      <text x="300" y="211">outcome</text>
+      <text x="500" y="175">tab: ABET Scores</text>
+      <text x="500" y="193">one row</text>
+      <text x="500" y="211">per score</text>
+      <text x="300" y="342">SIS ID to plan</text>
+      <text x="300" y="357">(private sheet)</text>
+    </g>
+    <g text-anchor="middle" font-size="12" fill="#1d5fd1">
+      <text x="300" y="76">Tkinter window</text>
+      <text x="300" y="92">token in, log out</text>
+    </g>
+    <path d="M225 106H375M225 100V112M375 100V112" stroke="#1d5fd1" stroke-width="1.5" fill="none"/>
+  </g>
+</svg>

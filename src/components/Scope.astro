@@ -1,0 +1,83 @@
+---
+/**
+ * Hero visual: an oscilloscope screen showing the start of an SBUS frame.
+ *
+ * SBUS is a UART at 100 kbaud, 8 data bits, even parity, 2 stop bits, LSB first.
+ * Each byte is therefore 12 bit-times: 1 start + 8 data + 1 parity + 2 stop.
+ * Every frame opens with the header byte 0x0F. The trace below is generated
+ * from real bytes, so the waveform is genuinely what a scope would show
+ * (drawn here as idle-high logic; on the wire SBUS is inverted).
+ *
+ * At 100 kbaud one bit is 10 microseconds. 76 bit-times across 10 divisions
+ * works out to 76 microseconds per division, which is what the readout says.
+ */
+const bytes = [0x0f, 0xe0, 0x03, 0x1f, 0x58, 0xc0]; // header 0x0F + example channel bytes
+
+function frameBits(byte: number): number[] {
+  const data = Array.from({ length: 8 }, (_, i) => (byte >> i) & 1); // LSB first
+  const parity = data.reduce((sum, b) => sum + b, 0) % 2; // even parity
+  return [0, ...data, parity, 1, 1];
+}
+
+const bits = [1, 1, ...bytes.flatMap(frameBits), 1, 1];
+
+const W = 480;
+const H = 288;
+const bitW = W / bits.length;
+const yHigh = 96;
+const yLow = 192;
+
+let d = `M0 ${yHigh}`;
+let prev = 1;
+bits.forEach((bit, i) => {
+  if (bit !== prev) {
+    d += ` V${bit ? yHigh : yLow}`;
+    prev = bit;
+  }
+  d += ` H${((i + 1) * bitW).toFixed(2)}`;
+});
+
+// Bracket over the first byte (bit-times 2 to 13).
+const bx1 = 2 * bitW;
+const bx2 = 14 * bitW;
+---
+
+<figure class="scope m-0">
+  <svg
+    viewBox={`0 0 ${W} ${H}`}
+    xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="Oscilloscope trace of the start of an SBUS frame, beginning with the header byte 0x0F"
+  >
+    <!-- graticule: 10 x 6 divisions -->
+    <g stroke="#22324d" stroke-width="1">
+      {Array.from({ length: 11 }, (_, i) => <path d={`M${i * 48} 0V${H}`} />)}
+      {Array.from({ length: 7 }, (_, i) => <path d={`M0 ${i * 48}H${W}`} />)}
+    </g>
+    <g stroke="#3a4f73" stroke-width="1">
+      <path d={`M${W / 2} 0V${H}`}></path>
+      <path d={`M0 ${H / 2}H${W}`}></path>
+    </g>
+
+    <!-- 0x0F header bracket -->
+    <g stroke="#9fb4d6" stroke-width="1" fill="none">
+      <path d={`M${bx1.toFixed(1)} 70V62H${bx2.toFixed(1)}V70`}></path>
+    </g>
+    <text
+      x={((bx1 + bx2) / 2).toFixed(1)}
+      y="52"
+      text-anchor="middle"
+      font-family="ui-monospace, Menlo, Consolas, monospace"
+      font-size="13"
+      fill="#cfe0ff">0x0F</text
+    >
+
+    <path class="trace" d={d} pathLength="1"></path>
+
+    <!-- readouts -->
+    <g font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" fill="#9fb4d6">
+      <text x="10" y="278">CH1</text>
+      <text x="470" y="278" text-anchor="end">76 µs/div</text>
+    </g>
+  </svg>
+</figure>

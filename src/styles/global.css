@@ -1,0 +1,1101 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   DESIGN TOKENS
+   The desk (page background) has two themes: "paper" (default) and "blueprint".
+   Everything glued onto the desk (cards, tickets, notes, tape) is always
+   physical paper, so it keeps the same colors in both themes. Paper things use
+   the .on-paper class, which resets the text tokens to dark-ink-on-paper.
+   ========================================================================== */
+:root {
+  --paper: #f9f9f8;
+  --card: #ffffff;
+  --mount: #eef2f7;
+  --mount-line: #dbe3ee;
+  --ink: #1e293b;
+  --muted: #59657a;
+  --rule: #cbd5e1;
+  --grid: #d3dae5;
+  --cad: #1d5fd1;
+  --on-cad: #ffffff;
+  --cad-soft: #e6eefb;
+  --amber: #e8590c;
+  --amber-ink: #b8430a;
+  --shadow: 30 41 59;
+
+  /* physical paper stock (same in both themes) */
+  --paper-cream: #fbf6ea;
+  --paper-kraft: #d6b98f;
+  --paper-graph: #f6f9fd;
+  --ticket: #f3bf5e;
+  --ticket-ink: #3a2a12;
+  --sticky: #ffe27a;
+  --tape-blue: #5f93d6;
+  --tape-red: #d5563a;
+  --stamp-ink: #22449b;
+
+  /* paper grain: warm speckle, used as an extra background layer */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .3 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* torn edges, generated once: clip-path polygons */
+  --torn-card-a: polygon(0.00% 0.00%,100.00% 0.00%,100.00% 99.74%,98.44% 99.40%,96.88% 99.59%,95.31% 99.34%,93.75% 99.31%,92.19% 99.93%,90.62% 99.99%,89.06% 99.08%,87.50% 99.71%,85.94% 99.74%,84.38% 98.90%,82.81% 99.48%,81.25% 99.08%,79.69% 99.48%,78.12% 99.30%,76.56% 99.83%,75.00% 99.30%,73.44% 99.05%,71.88% 99.42%,70.31% 99.18%,68.75% 99.26%,67.19% 99.93%,65.62% 99.17%,64.06% 99.35%,62.50% 99.67%,60.94% 99.97%,59.38% 99.05%,57.81% 99.48%,56.25% 99.21%,54.69% 99.03%,53.12% 99.21%,51.56% 98.99%,50.00% 99.57%,48.44% 99.12%,46.88% 99.51%,45.31% 98.97%,43.75% 99.03%,42.19% 99.89%,40.62% 99.85%,39.06% 99.76%,37.50% 98.94%,35.94% 99.52%,34.38% 99.31%,32.81% 99.67%,31.25% 99.44%,29.69% 99.58%,28.12% 99.61%,26.56% 99.36%,25.00% 99.36%,23.44% 99.01%,21.88% 99.25%,20.31% 98.98%,18.75% 99.06%,17.19% 98.91%,15.62% 99.26%,14.06% 99.82%,12.50% 99.05%,10.94% 98.94%,9.38% 99.00%,7.81% 99.37%,6.25% 99.21%,4.69% 99.77%,3.12% 99.09%,1.56% 99.37%,0.00% 99.69%);
+  --torn-card-b: polygon(0.00% 0.00%,100.00% 0.00%,100.00% 99.50%,98.44% 99.38%,96.88% 98.98%,95.31% 99.49%,93.75% 99.44%,92.19% 99.35%,90.62% 99.80%,89.06% 99.44%,87.50% 99.31%,85.94% 99.13%,84.38% 99.90%,82.81% 99.67%,81.25% 99.90%,79.69% 99.11%,78.12% 99.24%,76.56% 99.95%,75.00% 98.92%,73.44% 98.94%,71.88% 99.28%,70.31% 99.32%,68.75% 99.83%,67.19% 99.98%,65.62% 99.42%,64.06% 99.93%,62.50% 99.79%,60.94% 99.73%,59.38% 99.97%,57.81% 99.49%,56.25% 99.52%,54.69% 99.07%,53.12% 99.43%,51.56% 99.30%,50.00% 99.45%,48.44% 99.27%,46.88% 99.50%,45.31% 99.69%,43.75% 98.90%,42.19% 98.90%,40.62% 99.08%,39.06% 99.22%,37.50% 99.65%,35.94% 99.75%,34.38% 99.68%,32.81% 99.92%,31.25% 99.16%,29.69% 99.56%,28.12% 99.07%,26.56% 99.57%,25.00% 98.95%,23.44% 99.07%,21.88% 100.00%,20.31% 99.77%,18.75% 99.00%,17.19% 99.48%,15.62% 98.92%,14.06% 99.56%,12.50% 99.92%,10.94% 99.31%,9.38% 99.14%,7.81% 99.70%,6.25% 99.90%,4.69% 99.63%,3.12% 98.94%,1.56% 99.17%,0.00% 99.87%);
+  --torn-label-a: polygon(0.00% 7.47%,3.85% 8.90%,7.69% 9.54%,11.54% 11.31%,15.38% 8.88%,19.23% 11.07%,23.08% 0.35%,26.92% 5.59%,30.77% 11.32%,34.62% 7.79%,38.46% 10.81%,42.31% 1.36%,46.15% 5.63%,50.00% 2.96%,53.85% 6.53%,57.69% 6.89%,61.54% 0.16%,65.38% 2.60%,69.23% 3.35%,73.08% 11.00%,76.92% 9.19%,80.77% 1.92%,84.62% 9.57%,88.46% 1.67%,92.31% 7.41%,96.15% 1.52%,100.00% 0.02%,98.61% 16.67%,99.66% 33.33%,99.66% 50.00%,98.43% 66.67%,98.60% 83.33%,99.54% 100.00%,96.15% 88.46%,92.31% 93.53%,88.46% 91.87%,84.62% 97.54%,80.77% 88.71%,76.92% 91.71%,73.08% 88.40%,69.23% 89.28%,65.38% 96.41%,61.54% 95.67%,57.69% 98.01%,53.85% 98.25%,50.00% 99.22%,46.15% 96.38%,42.31% 92.76%,38.46% 99.96%,34.62% 91.86%,30.77% 95.95%,26.92% 96.28%,23.08% 90.18%,19.23% 94.23%,15.38% 96.21%,11.54% 94.23%,7.69% 91.54%,3.85% 99.32%,0.00% 88.30%,0.04% 83.33%,1.20% 66.67%,1.35% 50.00%,0.03% 33.33%,1.26% 16.67%);
+  --torn-label-b: polygon(0.00% 5.56%,3.85% 4.48%,7.69% 1.66%,11.54% 10.40%,15.38% 0.08%,19.23% 6.03%,23.08% 10.78%,26.92% 0.97%,30.77% 6.65%,34.62% 7.40%,38.46% 0.49%,42.31% 4.55%,46.15% 8.44%,50.00% 5.42%,53.85% 8.70%,57.69% 1.89%,61.54% 2.86%,65.38% 1.33%,69.23% 6.08%,73.08% 11.09%,76.92% 7.09%,80.77% 9.29%,84.62% 4.60%,88.46% 8.95%,92.31% 1.22%,96.15% 3.49%,100.00% 8.09%,98.84% 16.67%,99.33% 33.33%,99.86% 50.00%,99.57% 66.67%,99.66% 83.33%,99.55% 100.00%,96.15% 90.29%,92.31% 97.61%,88.46% 89.36%,84.62% 89.45%,80.77% 99.34%,76.92% 95.45%,73.08% 94.10%,69.23% 99.72%,65.38% 94.90%,61.54% 89.12%,57.69% 98.66%,53.85% 92.84%,50.00% 98.55%,46.15% 93.06%,42.31% 89.26%,38.46% 97.56%,34.62% 99.90%,30.77% 99.00%,26.92% 93.52%,23.08% 99.79%,19.23% 98.98%,15.38% 94.04%,11.54% 88.95%,7.69% 94.96%,3.85% 95.22%,0.00% 92.34%,0.15% 83.33%,0.93% 66.67%,0.28% 50.00%,0.97% 33.33%,1.53% 16.67%);
+  --torn-scrap-a: polygon(0.00% 0.36%,2.27% 1.52%,4.55% 1.40%,6.82% 1.05%,9.09% 0.48%,11.36% 1.74%,13.64% 1.78%,15.91% 1.13%,18.18% 1.11%,20.45% 0.52%,22.73% 0.01%,25.00% 0.82%,27.27% 1.29%,29.55% 0.15%,31.82% 1.75%,34.09% 0.51%,36.36% 0.51%,38.64% 0.09%,40.91% 2.19%,43.18% 1.63%,45.45% 1.93%,47.73% 1.35%,50.00% 0.07%,52.27% 0.72%,54.55% 1.09%,56.82% 0.25%,59.09% 2.09%,61.36% 0.81%,63.64% 0.34%,65.91% 1.80%,68.18% 0.27%,70.45% 2.04%,72.73% 1.00%,75.00% 1.21%,77.27% 0.75%,79.55% 1.07%,81.82% 0.41%,84.09% 0.08%,86.36% 1.90%,88.64% 0.52%,90.91% 1.72%,93.18% 0.46%,95.45% 2.13%,97.73% 1.97%,100.00% 1.66%,99.24% 8.33%,99.42% 16.67%,99.27% 25.00%,99.88% 33.33%,99.52% 41.67%,99.17% 50.00%,99.80% 58.33%,99.08% 66.67%,99.11% 75.00%,99.59% 83.33%,99.63% 91.67%,99.55% 100.00%,97.73% 99.15%,95.45% 97.81%,93.18% 99.15%,90.91% 99.94%,88.64% 99.79%,86.36% 98.42%,84.09% 97.82%,81.82% 98.91%,79.55% 98.92%,77.27% 98.79%,75.00% 98.35%,72.73% 99.51%,70.45% 98.66%,68.18% 98.78%,65.91% 98.63%,63.64% 99.60%,61.36% 99.63%,59.09% 99.23%,56.82% 97.96%,54.55% 99.24%,52.27% 98.69%,50.00% 99.33%,47.73% 99.77%,45.45% 99.86%,43.18% 98.21%,40.91% 98.29%,38.64% 99.18%,36.36% 98.50%,34.09% 98.51%,31.82% 98.02%,29.55% 97.89%,27.27% 99.10%,25.00% 97.82%,22.73% 97.88%,20.45% 98.70%,18.18% 98.06%,15.91% 98.92%,13.64% 99.17%,11.36% 99.46%,9.09% 98.07%,6.82% 99.64%,4.55% 99.85%,2.27% 98.23%,0.00% 98.30%,0.48% 91.67%,0.84% 83.33%,0.05% 75.00%,0.26% 66.67%,0.29% 58.33%,0.42% 50.00%,0.17% 41.67%,0.07% 33.33%,0.34% 25.00%,0.90% 16.67%,0.98% 8.33%);
+  --torn-scrap-b: polygon(0.00% 1.16%,2.27% 1.29%,4.55% 1.86%,6.82% 1.98%,9.09% 1.94%,11.36% 0.80%,13.64% 2.09%,15.91% 0.93%,18.18% 0.67%,20.45% 0.21%,22.73% 1.13%,25.00% 0.34%,27.27% 0.60%,29.55% 1.34%,31.82% 1.71%,34.09% 1.66%,36.36% 0.19%,38.64% 0.13%,40.91% 0.56%,43.18% 1.21%,45.45% 1.85%,47.73% 1.76%,50.00% 2.05%,52.27% 1.30%,54.55% 1.40%,56.82% 0.64%,59.09% 0.69%,61.36% 0.45%,63.64% 1.18%,65.91% 1.34%,68.18% 1.26%,70.45% 0.86%,72.73% 0.93%,75.00% 0.55%,77.27% 1.79%,79.55% 1.28%,81.82% 1.65%,84.09% 1.79%,86.36% 0.62%,88.64% 0.26%,90.91% 0.62%,93.18% 2.00%,95.45% 1.74%,97.73% 0.89%,100.00% 1.71%,99.66% 8.33%,99.13% 16.67%,99.91% 25.00%,99.26% 33.33%,99.02% 41.67%,99.58% 50.00%,99.54% 58.33%,99.87% 66.67%,99.72% 75.00%,99.77% 83.33%,99.70% 91.67%,99.93% 100.00%,97.73% 99.34%,95.45% 99.77%,93.18% 98.85%,90.91% 99.11%,88.64% 99.50%,86.36% 97.92%,84.09% 99.32%,81.82% 98.83%,79.55% 98.03%,77.27% 98.33%,75.00% 97.88%,72.73% 98.66%,70.45% 98.08%,68.18% 99.86%,65.91% 98.38%,63.64% 99.26%,61.36% 99.29%,59.09% 98.31%,56.82% 98.37%,54.55% 99.25%,52.27% 99.20%,50.00% 99.39%,47.73% 97.95%,45.45% 98.65%,43.18% 99.43%,40.91% 98.83%,38.64% 99.87%,36.36% 99.41%,34.09% 98.90%,31.82% 97.86%,29.55% 98.11%,27.27% 98.80%,25.00% 98.32%,22.73% 99.45%,20.45% 98.47%,18.18% 97.81%,15.91% 99.66%,13.64% 97.95%,11.36% 97.83%,9.09% 99.19%,6.82% 98.21%,4.55% 97.83%,2.27% 99.67%,0.00% 98.98%,0.59% 91.67%,0.79% 83.33%,0.27% 75.00%,0.75% 66.67%,0.70% 58.33%,0.86% 50.00%,0.73% 41.67%,0.86% 33.33%,0.60% 25.00%,0.54% 16.67%,0.46% 8.33%);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --paper: #0b2545;
+  --card: #10305a;
+  --mount: #0c294f;
+  --mount-line: #1d4278;
+  --ink: #e8eef8;
+  --muted: #a9bad3;
+  --rule: #2f5286;
+  --grid: #24487a;
+  --cad: #86b6ff;
+  --on-cad: #0b2545;
+  --cad-soft: #17386a;
+  --amber: #ff8a3d;
+  --amber-ink: #ffa15f;
+  --shadow: 2 10 24;
+  color-scheme: dark;
+}
+
+/* Anything that is physically paper: dark ink, light stock, regardless of theme. */
+.on-paper {
+  --ink: #1e293b;
+  --muted: #55627a;
+  --rule: #cbd5e1;
+  --card: #fffdf8;
+  --mount: #eef2f7;
+  --mount-line: #dbe3ee;
+  --cad: #1d5fd1;
+  --on-cad: #ffffff;
+  --cad-soft: #e6eefb;
+  --amber-ink: #b8430a;
+  color: var(--ink);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-mount: var(--mount);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-cad: var(--cad);
+  --color-cad-soft: var(--cad-soft);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+
+  --font-sans: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+  --font-script: "Kaushan Script", "Brush Script MT", "Segoe Script", cursive;
+}
+
+/* =============================================================================
+   BASE
+   ========================================================================== */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 1.5rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  position: relative;
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: radial-gradient(var(--grid) 1.1px, transparent 1.3px);
+  background-size: 24px 24px;
+  background-position: 12px 12px;
+  -webkit-font-smoothing: antialiased;
+  /* rotated scraps may poke past the edge; never create a sideways scrollbar */
+  overflow-x: clip;
+}
+
+/* a whisper of paper grain over the whole desk */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background-image: var(--grain);
+  opacity: 0.14;
+}
+
+/* tape and stamps hang past their paper; clip them at the screen edge, not in a scrollbar */
+main,
+footer {
+  overflow-x: clip;
+}
+
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--cad);
+  color: var(--on-cad);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cad);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.hand {
+  font-family: var(--font-hand);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.script {
+  font-family: var(--font-script);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* =============================================================================
+   PAPER PARTS: shadows, tape, tickets, label strips, sticky notes
+   ========================================================================== */
+
+/* Clip-paths and masks also clip box-shadow, so cut-out shapes get their shadow
+   from this wrapper instead (filters run on the finished, already-cut shape). */
+.drop {
+  filter: drop-shadow(0 1px 0 rgb(var(--shadow) / 0.1)) drop-shadow(0 10px 12px rgb(var(--shadow) / 0.26));
+}
+.drop:has(:focus-visible) {
+  outline: 2px solid var(--cad);
+  outline-offset: 5px;
+}
+
+/* washi tape */
+.tape {
+  position: absolute;
+  z-index: 5;
+  width: 5.6rem;
+  height: 1.6rem;
+  pointer-events: none;
+  opacity: 0.92;
+  clip-path: polygon(0 0, 3% 12%, 0 26%, 3% 40%, 0 54%, 3% 68%, 0 82%, 3% 100%, 100% 100%, 97% 86%, 100% 72%, 97% 58%, 100% 44%, 97% 30%, 100% 16%, 97% 0);
+}
+.tape-stripe {
+  background: repeating-linear-gradient(-45deg, var(--tape-blue) 0 7px, rgb(255 255 255 / 0.88) 7px 14px);
+}
+.tape-dots {
+  background: radial-gradient(circle, #d99a1e 1.7px, transparent 2.1px) 0 0 / 9px 9px, #fbeecb;
+}
+.tape-kraft {
+  background: rgb(206 172 120 / 0.85);
+}
+.tape-red {
+  background: repeating-linear-gradient(-45deg, var(--tape-red) 0 5px, #f4d9cf 5px 10px);
+}
+.tape-grid {
+  background:
+    linear-gradient(rgb(29 95 209 / 0.4) 1px, transparent 1px) 0 0 / 8px 8px,
+    linear-gradient(90deg, rgb(29 95 209 / 0.4) 1px, transparent 1px) 0 0 / 8px 8px,
+    #e3ecfa;
+}
+.tape-tl {
+  top: -0.5rem;
+  left: -1.9rem;
+  rotate: -38deg;
+}
+.tape-tr {
+  top: -0.5rem;
+  right: -1.9rem;
+  rotate: 38deg;
+}
+.tape-top {
+  top: -0.8rem;
+  left: 50%;
+  translate: -50% 0;
+  rotate: -3deg;
+}
+/* tape used as a hand-lettered label */
+.tape-label {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0.2rem 1.5rem 0.3rem;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  color: #1e293b;
+  white-space: nowrap;
+  opacity: 0.96;
+}
+
+/* ticket stub: notched sides, perforation, barcode */
+.ticket {
+  --notch: 0.55rem;
+  display: inline-flex;
+  align-items: stretch;
+  padding: 0;
+  border: 0;
+  background: var(--grain), var(--ticket);
+  color: var(--ticket-ink);
+  font-family: var(--font-sans);
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+  -webkit-mask:
+    radial-gradient(circle at 0 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle at 0 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat;
+}
+.ticket:hover {
+  filter: brightness(1.06);
+}
+.ticket-main {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1.1rem 0.75rem 1.5rem;
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+.ticket-main svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ticket-stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.5rem 1.1rem 0.5rem 0.95rem;
+  border-left: 2px dashed rgb(58 42 18 / 0.5);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1;
+}
+.barcode {
+  display: block;
+  width: 2.6rem;
+  height: 1.05rem;
+  background: repeating-linear-gradient(90deg, var(--ticket-ink) 0 2px, transparent 2px 4px, var(--ticket-ink) 4px 5px, transparent 5px 8px, var(--ticket-ink) 8px 11px, transparent 11px 12px);
+}
+
+/* black label-maker strip */
+.strip {
+  display: inline-block;
+  padding: 0.28rem 0.75rem;
+  background: #161616;
+  color: #f4f4f4;
+  outline: 1px solid rgb(255 255 255 / 0.32);
+  outline-offset: -3px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  rotate: -1.2deg;
+}
+
+/* tools and methods as label-maker tags */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.55rem;
+  background: #1c1c1c;
+  color: #f2f2f2;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-shadow: 0 1px 0 #000;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
+}
+li.tag:nth-child(odd) {
+  rotate: -0.9deg;
+}
+li.tag:nth-child(even) {
+  rotate: 0.8deg;
+}
+
+/* post-it note (not named .sticky: that collides with Tailwind's position:sticky) */
+.postit {
+  background: linear-gradient(180deg, var(--sticky) 0 88%, #f6d55f 100%);
+  color: #3a2f10;
+  box-shadow:
+    0 1px 0 rgb(0 0 0 / 0.08),
+    0 14px 14px -10px rgb(60 40 0 / 0.45);
+}
+
+/* coffee ring left on the desk */
+.coffee {
+  position: absolute;
+  z-index: 0;
+  width: 10.5rem;
+  height: 10.5rem;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, transparent 60%, rgb(125 78 34 / 0.2) 62%, rgb(125 78 34 / 0.08) 68%, transparent 70%);
+  rotate: 18deg;
+}
+
+/* yellow engineer's ruler */
+.ruler {
+  height: 1.75rem;
+  background:
+    repeating-linear-gradient(90deg, #6b5a1e 0 1px, transparent 1px 6px) bottom / 100% 8px no-repeat,
+    repeating-linear-gradient(90deg, #6b5a1e 0 1px, transparent 1px 30px) bottom / 100% 15px no-repeat,
+    var(--grain),
+    #f3d675;
+  box-shadow: 0 6px 10px -6px rgb(var(--shadow) / 0.5);
+}
+
+/* dimension line beside section titles */
+.dimline {
+  position: relative;
+  flex: 1;
+  height: 11px;
+  min-width: 2rem;
+}
+.dimline::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 5px;
+  height: 1px;
+  background: var(--muted);
+}
+.dimline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(var(--muted), var(--muted)) left / 1px 100% no-repeat,
+    linear-gradient(var(--muted), var(--muted)) right / 1px 100% no-repeat;
+}
+
+/* =============================================================================
+   BUTTONS AND CHIPS
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 1rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--cad-soft);
+}
+.btn-primary {
+  background: var(--cad);
+  border-color: var(--cad);
+  color: var(--on-cad);
+}
+.btn-primary:hover {
+  background: var(--cad);
+  filter: brightness(1.08);
+}
+.btn svg,
+.chip svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* contact details as little paper labels */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--grain), #fffdf6;
+  border: 1px solid rgb(30 41 59 / 0.18);
+  border-radius: 3px;
+  box-shadow: 0 6px 8px -6px rgb(var(--shadow) / 0.45);
+  font-size: 0.92rem;
+  color: #1e293b;
+  text-decoration: none;
+}
+a.chip:hover {
+  color: #1d5fd1;
+  border-color: #1d5fd1;
+}
+.chip-row > li:nth-child(odd) .chip {
+  rotate: -1.1deg;
+}
+.chip-row > li:nth-child(even) .chip {
+  rotate: 0.9deg;
+}
+
+/* =============================================================================
+   HERO: taped oscilloscope print, stamp, title block
+   ========================================================================== */
+.scope {
+  background: #0a1220;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+.scope svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.scope .trace {
+  fill: none;
+  stroke: #ff8a3d;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgb(255 138 61 / 0.6));
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: trace-draw 2.8s cubic-bezier(0.45, 0.1, 0.25, 1) 0.35s forwards;
+}
+@keyframes trace-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* when the scope sits inside a polaroid, drop its own frame */
+.polaroid .photo.scope-photo {
+  aspect-ratio: auto;
+  background: #0a1220;
+}
+.polaroid .scope {
+  border: 0;
+  border-radius: 0;
+  padding: 0.6rem;
+  box-shadow: none;
+}
+
+.stamp-ring {
+  color: var(--stamp-ink);
+  mix-blend-mode: multiply;
+  rotate: -14deg;
+  opacity: 0.9;
+}
+:root[data-theme="dark"] .stamp-ring {
+  color: #9fc3ff;
+  mix-blend-mode: normal;
+  opacity: 0.95;
+}
+
+.titleblock {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 2px solid var(--ink);
+  background: var(--grain), var(--card);
+}
+@media (min-width: 900px) {
+  .titleblock {
+    grid-template-columns: 1fr 1.1fr 1.7fr;
+  }
+}
+.titleblock > div {
+  padding: 0.35rem 0.8rem 0.7rem;
+  border-right: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  min-width: 0;
+}
+.titleblock > div:nth-child(2n) {
+  border-right: 0;
+}
+/* three cells: the last one spans the full row on phones */
+.titleblock > div:last-child {
+  grid-column: 1 / -1;
+  border-right: 0;
+  border-bottom: 0;
+}
+@media (min-width: 900px) {
+  .titleblock > div {
+    border-bottom: 0;
+  }
+  .titleblock > div:nth-child(2n) {
+    border-right: 1px solid var(--ink);
+  }
+  .titleblock > div:last-child {
+    grid-column: auto;
+    border-right: 0;
+  }
+}
+.titleblock .cell-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 0.15rem;
+}
+.titleblock .cell-value {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* =============================================================================
+   PROJECT CARD: a scrap page with a collage board, polaroid, torn title label
+   ========================================================================== */
+.card {
+  position: relative;
+  filter: drop-shadow(0 1px 0 rgb(var(--shadow) / 0.1)) drop-shadow(0 16px 16px rgb(var(--shadow) / 0.28));
+}
+.card[data-match="false"] {
+  opacity: 0.4;
+}
+.card[data-match="true"] {
+  outline: 2px solid var(--amber);
+  outline-offset: 8px;
+}
+.card-paper {
+  position: relative;
+  padding: 0.95rem 0.95rem 2.6rem;
+  background: var(--grain), var(--paper-cream);
+  clip-path: var(--torn-card-a);
+}
+.project:nth-child(even) .card-paper {
+  clip-path: var(--torn-card-b);
+}
+
+/* the board a photo is mounted on: four different papers */
+.board {
+  position: relative;
+  padding: 2.4rem 1.5rem 3.3rem;
+  background-color: var(--paper-kraft);
+  background-image: var(--grain);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.07);
+}
+.board[data-variant="1"] {
+  background-color: var(--paper-graph);
+  background-image:
+    linear-gradient(#c7d5e9 1px, transparent 1px),
+    linear-gradient(90deg, #c7d5e9 1px, transparent 1px),
+    var(--grain);
+  background-size: 20px 20px, 20px 20px, auto;
+}
+.board[data-variant="2"] {
+  background-color: #143d70;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.16) 1px, transparent 1px),
+    var(--grain);
+  background-size: 20px 20px, 20px 20px, auto;
+}
+.board[data-variant="3"] {
+  background-color: #fffdf6;
+  background-image:
+    linear-gradient(90deg, transparent 2.3rem, rgb(213 86 58 / 0.55) 2.3rem, rgb(213 86 58 / 0.55) calc(2.3rem + 1px), transparent calc(2.3rem + 1px)),
+    repeating-linear-gradient(transparent 0 23px, #bcd0e8 23px 24px),
+    var(--grain);
+}
+/* a second scrap peeking out from behind the photo */
+.peek {
+  position: absolute;
+  z-index: 1;
+  right: -0.35rem;
+  bottom: 2.2rem;
+  width: 46%;
+  height: 42%;
+  rotate: 5deg;
+  clip-path: var(--torn-scrap-b);
+  background: var(--grain), #fffdf6;
+}
+.board[data-variant="0"] .peek {
+  background: linear-gradient(#c7d5e9 1px, transparent 1px) 0 0 / 14px 14px, linear-gradient(90deg, #c7d5e9 1px, transparent 1px) 0 0 / 14px 14px, #f6f9fd;
+}
+.board[data-variant="1"] .peek {
+  background: var(--grain), var(--paper-kraft);
+}
+.board[data-variant="2"] .peek {
+  background: var(--grain), #f0e4c8;
+}
+.board[data-variant="3"] .peek {
+  background: var(--grain), var(--ticket);
+}
+
+.polaroid {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  background: #fffefb;
+  color: #1e293b;
+  padding: 0.65rem 0.65rem 0;
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 0.25s ease;
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.12),
+    0 14px 20px -10px rgb(0 0 0 / 0.5);
+}
+.card:hover .polaroid,
+.card:focus-within .polaroid {
+  transform: rotate(0deg);
+}
+.polaroid .photo {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: #dfe6f0;
+}
+.polaroid .photo img,
+.polaroid .photo svg.fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.polaroid figcaption.has-stamp {
+  padding-right: 6.5rem;
+}
+.polaroid figcaption {
+  min-height: 2.9rem;
+  display: flex;
+  align-items: center;
+  padding: 0.3rem 0.15rem;
+  font-family: var(--font-hand);
+  font-size: 1.45rem;
+  font-weight: 500;
+  line-height: 1.05;
+  color: #1e293b;
+}
+
+/* title on a torn scrap, straddling the bottom edge of the board */
+.title-wrap {
+  position: relative;
+  z-index: 4;
+  width: fit-content;
+  max-width: calc(100% - 0.5rem);
+  margin: -2.9rem 0 0 0.4rem;
+  rotate: -1.2deg;
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.12)) drop-shadow(0 6px 6px rgb(0 0 0 / 0.25));
+}
+.project:nth-child(even) .title-wrap {
+  rotate: 0.9deg;
+}
+.title-scrap {
+  padding: 0.65rem 1.25rem 0.8rem;
+  background: var(--grain), #fffdf6;
+  clip-path: var(--torn-label-a);
+}
+.project:nth-child(even) .title-scrap {
+  clip-path: var(--torn-label-b);
+}
+
+.stamp {
+  position: absolute;
+  top: -1rem;
+  right: -0.6rem;
+  z-index: 6;
+  width: 4.7rem;
+  height: 4.7rem;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  border: 2px solid var(--amber-ink);
+  border-radius: 50%;
+  outline: 1px solid var(--amber-ink);
+  outline-offset: 3px;
+  color: #b8430a;
+  background: #fffdf6;
+  rotate: 10deg;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+.stamp strong {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* =============================================================================
+   SKILLS: each group is its own scrap of paper
+   ========================================================================== */
+.view-wrap {
+  position: relative;
+  rotate: var(--r, 0deg);
+}
+.view-paper {
+  position: relative;
+  padding: 2.1rem 1.15rem 1.35rem;
+  background-color: #fffdf6;
+  background-image: var(--grain);
+  clip-path: var(--torn-scrap-a);
+}
+.view-wrap:nth-child(even) .view-paper {
+  clip-path: var(--torn-scrap-b);
+}
+.view-paper[data-variant="0"] {
+  background-color: var(--paper-graph);
+  background-image: linear-gradient(#c7d5e9 1px, transparent 1px), linear-gradient(90deg, #c7d5e9 1px, transparent 1px), var(--grain);
+  background-size: 18px 18px, 18px 18px, auto;
+}
+.view-paper[data-variant="1"] {
+  background-color: var(--paper-kraft);
+}
+.view-paper[data-variant="2"] {
+  background-image: repeating-linear-gradient(transparent 0 25px, #bcd0e8 25px 26px), var(--grain);
+}
+.view-paper[data-variant="3"] {
+  background-color: var(--paper-cream);
+  background-image: radial-gradient(#b9a98a 1px, transparent 1.4px), var(--grain);
+  background-size: 16px 16px, auto;
+}
+.view-paper[data-variant="4"] {
+  background-color: #143d70;
+  background-image: linear-gradient(rgb(255 255 255 / 0.15) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.15) 1px, transparent 1px), var(--grain);
+  background-size: 18px 18px, 18px 18px, auto;
+}
+.view-paper[data-variant="5"] {
+  background-color: var(--paper-cream);
+}
+
+.pin {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem 0.4rem 1.6rem;
+  border: 1px solid rgb(30 41 59 / 0.3);
+  border-radius: 3px;
+  background: #fffdf8;
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 3px 5px -3px rgb(0 0 0 / 0.45);
+}
+.pin::before {
+  content: "";
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  width: 0.6rem;
+  height: 0.6rem;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: #59657a;
+  box-shadow:
+    inset -1px -1px 0 rgb(0 0 0 / 0.25),
+    0 1px 2px rgb(0 0 0 / 0.3);
+}
+.pin:hover {
+  border-color: #1d5fd1;
+}
+.pin[aria-pressed="true"] {
+  background: #1d5fd1;
+  border-color: #1d5fd1;
+  color: #ffffff;
+  font-weight: 600;
+}
+.pin[aria-pressed="true"]::before {
+  background: #ff8a3d;
+}
+.pin-static {
+  cursor: default;
+}
+.pin-static:hover {
+  border-color: rgb(30 41 59 / 0.3);
+}
+.pin-static::before {
+  background: #1d5fd1;
+}
+
+/* =============================================================================
+   TIMELINE: a route line with a ticket stub and an index card
+   ========================================================================== */
+.timeline {
+  position: relative;
+  padding: 0 0 0 2.25rem;
+  list-style: none;
+  border-left: 2px dashed var(--muted);
+}
+.timeline > li {
+  position: relative;
+  padding-bottom: 2.75rem;
+}
+.timeline > li:last-child {
+  padding-bottom: 0;
+}
+.timeline > li::before {
+  content: "";
+  position: absolute;
+  left: calc(-2.25rem - 8px);
+  top: 1.2rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 4px var(--paper);
+}
+
+.ticket-card {
+  --notch: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  background: var(--grain), var(--ticket);
+  color: var(--ticket-ink);
+  -webkit-mask:
+    radial-gradient(circle at 0 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle at 0 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat;
+}
+.ticket-card {
+  --muted: #5c4520;
+}
+.ticket-card .ticket-body {
+  padding: 1.4rem 1.4rem 1.5rem 2rem;
+  min-width: 0;
+}
+.ticket-card .ticket-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.3rem 1rem 1.1rem;
+  border-left: 2px dashed rgb(58 42 18 / 0.5);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+.ticket-card .barcode {
+  width: 2.8rem;
+  height: 2.6rem;
+}
+.ticket-card .btn {
+  border-color: var(--ticket-ink);
+  color: var(--ticket-ink);
+}
+.ticket-card .btn:hover {
+  background: rgb(255 255 255 / 0.35);
+}
+
+.index-card {
+  padding: 1.4rem 1.5rem 1.5rem 3.1rem;
+  background-color: #fffdf6;
+  background-image:
+    linear-gradient(90deg, transparent 2.2rem, rgb(213 86 58 / 0.55) 2.2rem, rgb(213 86 58 / 0.55) calc(2.2rem + 1px), transparent calc(2.2rem + 1px)),
+    repeating-linear-gradient(transparent 0 27px, #cbdaee 27px 28px),
+    var(--grain);
+  background-position: 0 0, 0 1.1rem, 0 0;
+}
+
+/* =============================================================================
+   CASE STUDY MODAL  (native <dialog>): a page from the notebook
+   ========================================================================== */
+dialog.case {
+  --ink: #1e293b;
+  --muted: #55627a;
+  --rule: #cbd5e1;
+  --card: #fbf6ea;
+  --mount: #efe8d6;
+  --cad: #1d5fd1;
+  --on-cad: #ffffff;
+  --cad-soft: #e6eefb;
+  padding: 0;
+  margin: auto;
+  width: min(46rem, calc(100vw - 1.25rem));
+  max-height: min(92dvh, 54rem);
+  border: 1.5px solid #1e293b;
+  border-radius: 3px;
+  background: var(--grain), var(--paper-cream);
+  color: var(--ink);
+  overflow: auto;
+  box-shadow: 0 40px 70px -25px rgb(0 0 0 / 0.65);
+}
+dialog.case::backdrop {
+  background: rgb(8 16 30 / 0.62);
+  backdrop-filter: blur(2px);
+}
+dialog.case[open] {
+  animation: case-in 0.18s ease-out;
+}
+@keyframes case-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+.case-body {
+  line-height: 1.7;
+}
+.case-body > :first-child {
+  margin-top: 0;
+}
+.case-body h2 {
+  margin: 1.9rem 0 0.6rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.case-body p {
+  margin: 0.75rem 0;
+  max-width: 68ch;
+}
+.case-body ul {
+  margin: 0.75rem 0;
+  padding-left: 1.2rem;
+  list-style: square;
+  max-width: 68ch;
+}
+.case-body ol {
+  margin: 0.75rem 0;
+  padding-left: 1.4rem;
+  list-style: decimal;
+  max-width: 68ch;
+}
+.case-body li {
+  margin: 0.35rem 0;
+  padding-left: 0.2rem;
+}
+.case-body li::marker {
+  color: var(--cad);
+}
+.case-body code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.1em 0.35em;
+  background: var(--mount);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+.case-body pre {
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  border: 1px solid var(--rule);
+}
+.case-body pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: inherit;
+}
+.case-body table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+.case-body th,
+.case-body td {
+  text-align: left;
+  padding: 0.5rem 0.9rem 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.case-body th {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.case-body a {
+  color: var(--cad);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.case-body a:hover {
+  text-decoration-thickness: 2px;
+}
+.case-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+}
+
+/* Figures: any paragraph that holds images becomes a row of small photo prints,
+   and an italic line right after it becomes a handwritten caption. */
+.case-body p:has(> img) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.9rem;
+  max-width: none;
+  margin: 1.5rem 0 0.35rem;
+}
+.case-body p:has(> img) > img {
+  flex: 0 0 auto;
+  object-fit: contain;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 32rem;
+  padding: 0.45rem;
+  border-radius: 0;
+  background: #fffefb;
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.12),
+    0 12px 16px -10px rgb(0 0 0 / 0.45);
+}
+.case-body p:has(> img) + p:has(> em:only-child) {
+  max-width: none;
+  margin: 0 0 1.2rem;
+  text-align: center;
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+  line-height: 1.15;
+  color: var(--muted);
+}
+.case-body p:has(> img) + p > em:only-child {
+  font-style: normal;
+}
+
+/* =============================================================================
+   MOTION: everything decorative stops for people who ask for less motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .scope .trace {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .polaroid {
+    transition: none;
+  }
+  dialog.case[open] {
+    animation: none;
+  }
+}
