@@ -1,6 +1,6 @@
 ---
 title: Flight controls and gyroscope test rig
-summary: A 3D-printed gyroscope test rig, a live Python telemetry tool, and SBUS signal analysis for a flight-controls co-op.
+summary: A 3D-printed gyroscope test rig used in about 20 repeatable single-motor drone tests, a live Python telemetry tool, and SBUS signal analysis for a flight-controls co-op.
 context: Co-op at Leo Flight and Anderson University
 period: May 2024 to present
 order: 1
@@ -16,6 +16,7 @@ alsoUses:
   - Telemetry
   - Dynamic Controls Testing
   - Hand Soldering
+  - Wiring Harnesses
   - Rapid Prototyping
   - 3D Printing
   - Mechatronics
@@ -41,10 +42,10 @@ videoCaption: the final rig, turned by hand
 
 A physical test rig for a gyroscope, built during a flight-controls co-op. The work covered the whole chain from the printed hardware to the signal on the wire to the software that displays it.
 
-- **Rig design.** Modeled in Autodesk Inventor and 3D printed to tight tolerances for flight stabilization testing.
-- **Telemetry.** A Python tool that shows real-time dynamic motion data from the rig and tracks dynamic controls and flight stability metrics.
+- **Rig design.** Designed and iterated in Autodesk Inventor across four versions, ending in a nested-ring assembly on bearings (18-inch outer radius, under 1 kg). It was 3D printed to tight tolerances and used in about 20 repeatable single-motor drone tests.
+- **Telemetry.** A Python tool that shows live motor RPM, PID values, position and gyroscopic data, to support flight-stability analysis and control adjustments.
 - **Signal analysis.** SBUS controller signals captured and decoded on a digital oscilloscope, and the Arduino hardware interfaces debugged with it.
-- **Electronics.** Hand-soldered harnesses, Arduino, and ESC integration for power delivery and motor regulation.
+- **Electronics.** Four ESCs integrated, custom harnesses hand-soldered for motor connections and power distribution, and an electronics holder designed and printed for the drone.
 
 ## The final version
 
