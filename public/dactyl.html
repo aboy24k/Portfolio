@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dactyl: hand tracking for robot arms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#dfe3de; --panel:#f4f5f1; --panel2:#e8ebe5; --ink:#161a1f; --ink2:#48515a; --ink3:#6f7881; --line:#c5cac2;
+  --accent:#2340d9; --accent-ink:#ffffff; --danger:#d12f3a; --ok:#2e9a4d; --warn:#c7780a;
+  /* filament colours: one per finger, reused everywhere that finger appears */
+  --c-thumb:#e5484d; --c-index:#f2a20c; --c-middle:#3d9a4b; --c-ring:#1e88d4; --c-pinky:#8a5cf5;
+  --c-roll:#56687a; --c-pitch:#7d8b98; --c-yaw:#3a4855;
+  --c-posx:#0f8b8d; --c-posy:#2aa5a7; --c-reach:#5fbcbd;
+  --stage:#101316; --stage-ink:#e9ece8;
+  --f-display:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-code:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#171a1d; --panel:#212529; --panel2:#2a2f34; --ink:#eceee9; --ink2:#b3bac1; --ink3:#868e97; --line:#394046;
+         --accent:#8ea4ff; --accent-ink:#0e1322; --danger:#ff6470; --ok:#54c777; --warn:#f0a03a; }
+}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.01em}
+small{color:var(--ink3)}
+.offscreen{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+/* layout */
+.app{display:grid;grid-template-columns:minmax(0,1fr) 452px;gap:18px;padding:18px;max-width:1700px;margin:0 auto;align-items:start}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{font-size:26px;font-weight:700;line-height:1}
+.brand p{margin:3px 0 0;color:var(--ink2);font-size:12.5px}
+.logo{display:flex;align-items:flex-end;gap:3px;height:30px}
+.logo i{display:block;width:6px;border-radius:3px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border:1px solid var(--line);border-radius:99px;background:var(--panel);font-size:12.5px}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--ink3)}
+.chip[data-s=ok] i{background:var(--ok)}
+.chip[data-s=warn] i{background:var(--warn)}
+.chip[data-s=live]{border-color:var(--danger)}
+.chip[data-s=live] i{background:var(--danger)}
+.chip b{font-weight:600}
+.chip span{color:var(--ink2)}
+.left{display:flex;flex-direction:column;gap:14px;min-width:0}
+.right{position:sticky;top:18px;max-height:calc(100vh - 36px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--panel);padding:7px 13px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--panel2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:transparent;color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:5px 10px;font-size:12.5px}
+.btn.stop{border-color:var(--danger);color:var(--danger);padding:9px 16px}
+.btn.stop.armed{background:var(--danger);color:#fff}
+.btn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* stage */
+.stage{position:relative;background:var(--stage);border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-height:min(62vh,760px);width:100%;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:48px 48px}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain}
+.hud{position:absolute;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.hud span{background:rgba(10,12,14,.72);color:var(--stage-ink);padding:4px 9px;border-radius:5px;font-size:12.5px;backdrop-filter:blur(4px)}
+.hud .conf{display:inline-flex;align-items:center;gap:7px}
+.hud .conf i{display:block;width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.hud .conf i::after{content:"";display:block;height:100%;width:var(--w,0%);background:#7bd88f}
+.empty,.cap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--stage-ink);text-align:center;padding:24px}
+.empty h2{font-size:24px;font-weight:600}
+.empty p{margin:0;max-width:46ch;color:#aab2ba}
+.empty .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.empty .btn{background:#1d2226;border-color:#39424a;color:var(--stage-ink)}
+.empty .btn.primary{background:#8ea4ff;color:#0e1322;border-color:transparent}
+.cap{background:rgba(8,10,12,.62);backdrop-filter:blur(3px)}
+.cap .n{font:700 96px/1 var(--f-display)}
+.cap .m{font-size:20px;font-weight:500}
+[hidden]{display:none!important}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar .sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.toolbar label{color:var(--ink2);font-size:12.5px}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.pair section{min-width:0}
+.pair h3{font-size:15px;font-weight:600;margin-bottom:2px}
+.pair p{margin:0 0 8px;color:var(--ink2);font-size:12.5px}
+.pair canvas{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+
+/* tabs */
+.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--panel2);flex:none}
+.tabs button{flex:1;border:0;background:none;padding:12px 6px;font:600 13.5px var(--f-display);color:var(--ink2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent);background:var(--panel)}
+.panel{overflow:auto;padding:16px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0}
+.panel h3{font-size:15px;font-weight:600}
+.panel p{margin:0;color:var(--ink2)}
+.group{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
+.group:first-child{border-top:0;padding-top:0}
+.field{display:grid;grid-template-columns:130px 1fr 52px;align-items:center;gap:10px}
+.field.two{grid-template-columns:130px 1fr}
+.field label{color:var(--ink2)}
+.field output{text-align:right;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select,input[type=number]{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:6px 14px;cursor:pointer;font-weight:600;font-size:13px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.check{display:flex;gap:8px;align-items:center;color:var(--ink2)}
+.note{font-size:12.5px;color:var(--ink2);background:var(--panel2);padding:9px 11px;border-radius:6px}
+.note.warn{background:color-mix(in srgb,var(--warn) 16%,var(--panel));color:var(--ink)}
+
+/* channels */
+.ch{border:1px solid var(--line);border-radius:7px;background:var(--panel)}
+.ch-main{display:grid;grid-template-columns:24px minmax(84px,1fr) 88px 40px 38px 22px;align-items:center;gap:10px;padding:8px 10px}
+.key{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--k);color:#fff;font-size:11.5px;font-weight:700}
+.ch-name{display:flex;flex-direction:column;line-height:1.2}
+.ch-name b{font-weight:600}
+.ch-name small{font-size:11.5px}
+.meter{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;width:0;background:var(--k)}
+.ch .ang{text-align:right;font-weight:600}
+.ch.off .ch-name,.ch.off .meter,.ch.off .ang{opacity:.42}
+.sw{position:relative;width:34px;height:20px;display:inline-block}
+.sw input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:10px;background:var(--line);transition:background .15s}
+.sw span::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.sw input:checked+span{background:var(--accent)}
+.sw input:checked+span::after{transform:translateX(14px)}
+.sw input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.chev{border:0;background:none;cursor:pointer;padding:0;width:22px;height:22px;display:grid;place-items:center;color:var(--ink2)}
+.chev svg{transition:transform .15s}
+.chev[aria-expanded=true] svg{transform:rotate(180deg)}
+.ch-detail{border-top:1px solid var(--line);padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;background:var(--panel2)}
+.ch-detail label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink2)}
+.ch-detail label.check{flex-direction:row;align-items:center}
+.ch-detail .full{grid-column:1/-1}
+.ch-detail .live{color:var(--ink);font-weight:600}
+
+/* serial log, code */
+.log{height:150px;overflow:auto;background:var(--stage);color:#cfd6dc;border-radius:6px;padding:8px 10px;font:12px/1.5 var(--f-code)}
+.log div.tx{color:#8ea4ff}.log div.err{color:#ff8a93}.log div.sys{color:#8f9aa3}
+.code{background:var(--stage);color:#d7dde2;border-radius:6px;padding:12px;font:12px/1.5 var(--f-code);overflow:auto;max-height:340px;white-space:pre;margin:0}
+.kbd{font:12px var(--f-code);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.proto{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.proto code{font:12px var(--f-code);color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.stat{font-size:12.5px;color:var(--ink2);word-break:break-all}
+
+#toasts{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:20;pointer-events:none}
+.toast{background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:7px;font-weight:500;max-width:min(560px,92vw);box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.toast.err{background:var(--danger);color:#fff}
+
+@media (max-width:1100px){
+  .app{grid-template-columns:1fr}
+  .right{position:static;max-height:none}
+  .panel{overflow:visible}
+  .chips{margin-left:0}
+}
+@media (max-width:640px){
+  .pair{grid-template-columns:1fr}
+  .field{grid-template-columns:100px 1fr 46px}
+  .ch-main{grid-template-columns:24px 1fr 60px 40px 36px 22px}
+  .ch-main .meter{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <i style="height:14px;background:var(--c-thumb)"></i><i style="height:22px;background:var(--c-index)"></i><i style="height:30px;background:var(--c-middle)"></i><i style="height:25px;background:var(--c-ring)"></i><i style="height:18px;background:var(--c-pinky)"></i>
+    </div>
+    <div><h1>Dactyl</h1><p>Hand tracking for robot arms</p></div>
+  </div>
+  <div class="chips" role="status" aria-live="polite">
+    <span class="chip" id="chipCam" data-s="off"><i></i><b>Camera</b><span>off</span></span>
+    <span class="chip" id="chipHand" data-s="off"><i></i><b>Hand</b><span>none</span></span>
+    <span class="chip" id="chipLink" data-s="off"><i></i><b>Arm link</b><span>not connected</span></span>
+    <span class="chip" id="chipOut" data-s="off"><i></i><b>Output</b><span>off</span></span>
+  </div>
+  <button class="btn stop" id="btnStop" title="Stops sending to the arm. Shortcut: Esc">Stop output</button>
+</header>
+
+<main class="left">
+  <section class="stage" id="stage" aria-label="Camera view with hand tracking overlay">
+    <canvas id="view" width="1280" height="720" role="img" aria-label="Live camera with tracked hand skeleton"></canvas>
+    <video id="cam" class="offscreen" playsinline muted></video>
+    <div class="hud" id="hud" hidden>
+      <span id="hudHand">No hand</span>
+      <span class="conf" id="hudConf"><i></i><em id="hudConfN" style="font-style:normal">0%</em></span>
+      <span id="hudFps">0 fps</span>
+    </div>
+    <div class="empty" id="empty">
+      <h2 id="emptyTitle">Camera is off</h2>
+      <p id="emptyText">Start the camera to track your hand. Video is processed in this browser tab and is never uploaded.</p>
+      <div class="row" id="emptyBtns">
+        <button class="btn primary" id="btnCam2">Start camera</button>
+        <button class="btn" id="btnDemo2">Try the signal generator</button>
+      </div>
+    </div>
+    <div class="cap" id="cap" hidden aria-live="assertive"><div class="n" id="capN"></div><div class="m" id="capM"></div></div>
+  </section>
+
+  <div class="toolbar">
+    <button class="btn primary" id="btnCam">Start camera</button>
+    <span class="sep"></span>
+    <button class="btn" id="btnCalAll" title="Walks through all four steps">Calibrate all</button>
+    <button class="btn small" id="btnCalOpen" title="Sets the fully open position of each finger">Open hand</button>
+    <button class="btn small" id="btnCalFist" title="Sets the fully closed position of each finger">Fist</button>
+    <button class="btn small" id="btnCalZero" title="Sets the neutral wrist orientation">Wrist zero</button>
+    <button class="btn small" id="btnCalCenter" title="Sets the neutral hand position for the arm channels">Center</button>
+    <span class="sep"></span>
+    <button class="btn small" id="btnDemo" aria-pressed="false" title="Drives the channels with a test motion so you can try the arm without a camera">Signal generator</button>
+  </div>
+
+  <div class="pair">
+    <section>
+      <h3>What the arm will do</h3>
+      <p>Your hand mapped onto the arm. Fingers use their filament colours.</p>
+      <canvas id="pv" width="840" height="600" aria-label="Retargeted hand preview"></canvas>
+    </section>
+    <section>
+      <h3>Servo commands, last 8 seconds</h3>
+      <p>Each line is one channel after smoothing and the speed limit.</p>
+      <canvas id="chart" width="840" height="600" aria-label="History of servo commands"></canvas>
+    </section>
+  </div>
+</main>
+
+<aside class="right" aria-label="Settings">
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="channels" aria-selected="true">Channels</button>
+    <button role="tab" data-tab="tracking" aria-selected="false">Tracking</button>
+    <button role="tab" data-tab="robot" aria-selected="false">Arm</button>
+    <button role="tab" data-tab="record" aria-selected="false">Record</button>
+    <button role="tab" data-tab="firmware" aria-selected="false">Firmware</button>
+  </nav>
+
+  <!-- Channels -->
+  <div class="panel" id="tab-channels" role="tabpanel">
+    <p>Each channel drives one servo. Switch a channel off if your arm doesn't have that joint; it will hold its rest angle. Open a channel to change its ranges or reverse it.</p>
+    <div id="chRows" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="row"><button class="btn small" id="btnReset">Reset all to defaults</button><small>Settings are saved in this browser.</small></div>
+  </div>
+
+  <!-- Tracking -->
+  <div class="panel" id="tab-tracking" role="tabpanel" hidden>
+    <div class="group">
+      <h3>Which hand controls the arm</h3>
+      <div class="seg" id="segHand" role="group" aria-label="Tracked hand">
+        <button data-v="right">Right</button><button data-v="left">Left</button><button data-v="any">Either</button>
+      </div>
+      <label class="check"><input type="checkbox" id="sFlip"> Swap left and right (turn on if the wrong hand is picked)</label>
+    </div>
+    <div class="group">
+      <h3>Signal</h3>
+      <div class="field"><label for="sSmooth">Smoothing</label><input type="range" id="sSmooth" min="0" max="100"><output id="oSmooth"></output></div>
+      <div class="field"><label for="sConf">Minimum confidence</label><input type="range" id="sConf" min="30" max="95"><output id="oConf"></output></div>
+      <p class="note">More smoothing removes jitter but adds lag. Movement is smoothed less when your hand moves fast, so quick gestures still feel responsive.</p>
+    </div>
+    <div class="group">
+      <h3>Camera</h3>
+      <div class="field two"><label for="sCam">Device</label><select id="sCam"><option value="">Default camera</option></select></div>
+      <div class="field two"><label for="sRes">Resolution</label><select id="sRes"><option value="480">640 × 480 (fastest)</option><option value="720">1280 × 720</option></select></div>
+      <label class="check"><input type="checkbox" id="sSkel"> Draw hand skeleton</label>
+      <label class="check"><input type="checkbox" id="sAxes"> Draw palm axes (red across, green along fingers, blue out of palm)</label>
+    </div>
+    <div class="note">Tips for clean tracking: even, front-facing light; a plain background; keep the whole hand in frame; avoid fast rotations that hide your fingers from the camera.</div>
+  </div>
+
+  <!-- Arm -->
+  <div class="panel" id="tab-robot" role="tabpanel" hidden>
+    <div class="note warn" id="serialWarn" hidden>This browser can't talk to a serial port. Open Dactyl in Chrome or Edge on a computer to connect your arm.</div>
+    <div class="group">
+      <h3>Connection</h3>
+      <div class="field two"><label for="sBaud">Baud rate</label>
+        <select id="sBaud"><option>9600</option><option>57600</option><option>115200</option><option>230400</option><option>500000</option></select></div>
+      <div class="row"><button class="btn primary" id="btnConnect">Connect to arm</button><span class="stat" id="linkStat">Not connected</span></div>
+    </div>
+    <div class="group">
+      <h3>Output</h3>
+      <div class="row">
+        <button class="btn primary grow" id="btnArm" disabled>Start sending to arm</button>
+        <button class="btn" id="btnRelease" disabled title="Stops pulsing every servo so the arm goes limp">Release servos</button>
+      </div>
+      <div class="field"><label for="sRate">Update rate</label><input type="range" id="sRate" min="10" max="60" step="5"><output id="oRate"></output></div>
+      <div class="field"><label for="sSpeed">Speed limit</label><input type="range" id="sSpeed" min="50" max="1000" step="10"><output id="oSpeed"></output></div>
+      <div class="field two"><label for="sLost">If hand is lost</label>
+        <select id="sLost"><option value="hold">Hold last pose</option><option value="rest">Go to rest pose</option><option value="pause">Stop sending</option></select></div>
+      <p class="note">Sending always starts switched off. Try the preview first, then start sending with your hand in a neutral pose. Esc or the red button stops output instantly. Output also stops if you switch tabs.</p>
+      <div class="stat" id="lastFrame">Last frame: none</div>
+    </div>
+    <div class="group">
+      <h3>Serial monitor</h3>
+      <div class="log" id="log" role="log" aria-live="off"></div>
+      <div class="row"><input type="text" id="txLine" placeholder="Send a line, for example P" style="flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel)"><button class="btn small" id="btnTx" disabled>Send</button></div>
+    </div>
+  </div>
+
+  <!-- Record -->
+  <div class="panel" id="tab-record" role="tabpanel" hidden>
+    <div class="group">
+      <h3>Record a session</h3>
+      <p>Saves every channel's tracked value and servo angle at the update rate. Use it to study a motion, replay it from an Arduino sketch, or tune your ranges.</p>
+      <div class="row"><button class="btn primary" id="btnRec">Start recording</button><button class="btn" id="btnCsv" disabled>Download CSV</button><button class="btn" id="btnClear" disabled>Clear</button></div>
+      <div class="stat" id="recStat">Nothing recorded yet</div>
+    </div>
+  </div>
+
+  <!-- Firmware -->
+  <div class="panel" id="tab-firmware" role="tabpanel" hidden>
+    <div class="group">
+      <h3>Arm firmware</h3>
+      <p>This sketch runs on an Arduino or ESP32 wired to a PCA9685 servo board. It clamps every angle to limits you set, limits speed, and holds position if the computer stops sending.</p>
+      <div class="row"><button class="btn primary" id="btnFwCopy">Copy sketch</button><button class="btn" id="btnFwDl">Download .ino</button></div>
+      <pre class="code" id="fwView"></pre>
+    </div>
+    <div class="group">
+      <h3>Serial protocol</h3>
+      <div class="proto">
+        <code>S,a0,…,a10</code><span>Target angles in degrees, 0 to 180, one per channel. Sent at the update rate.</span>
+        <code>R</code><span>Release every servo (limp).</span>
+        <code>H</code><span>Hold: resume at the last position.</span>
+        <code>P</code><span>Ping. The board answers PONG.</span>
+      </div>
+      <p>Channels 0 to 4 are thumb, index, middle, ring, pinky. 5 to 7 are wrist roll, pitch, yaw. 8 to 10 are arm swing, lift, reach. Channels you switch off are sent at their rest angle.</p>
+    </div>
+  </div>
+</aside>
+</div>
+
+<div id="toasts" role="status" aria-live="polite"></div>
+<script type="text/plain" id="fwSrc">
+/*
+  Dactyl arm receiver
+  -------------------
+  Receives servo angles from the Dactyl web app over USB serial and drives
+  up to 16 hobby servos through a PCA9685 board.
+
+  Boards:   Arduino Uno / Nano / Mega, or ESP32 (default I2C pins)
+  Library:  "Adafruit PWM Servo Driver Library" (Library Manager)
+
+  Wiring:
+    PCA9685 SDA -> board SDA (Uno/Nano: A4)
+    PCA9685 SCL -> board SCL (Uno/Nano: A5)
+    PCA9685 VCC -> board 5V / 3.3V (logic power only)
+    PCA9685 V+  -> external 5-6 V servo supply, rated for the total stall
+                   current of your servos. Never power servos from the board.
+    Grounds of the board, PCA9685 and servo supply must all be connected.
+
+  Serial protocol (115200 baud, one command per line, newline terminated):
+    S,a0,a1,...,a10   target angles in degrees (0-180), one per channel
+    R                 release: stop sending pulses (servos go limp)
+    H                 hold: resume pulses at the last commanded position
+    P                 ping, replies "PONG"
+
+  Channel order (must match the Dactyl channel list):
+    0 thumb  1 index  2 middle  3 ring  4 pinky
+    5 wrist roll  6 wrist pitch  7 wrist yaw
+    8 arm swing   9 arm lift    10 arm reach
+*/
+
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+
+// ---------- Settings you will want to edit ----------
+#define NUM_CH             11
+#define BAUD               115200
+#define PULSE_MIN_US       500      // pulse width at 0 degrees   (tune per servo)
+#define PULSE_MAX_US       2500     // pulse width at 180 degrees (tune per servo)
+#define MAX_DPS            300.0f   // firmware speed limit, degrees per second
+#define TIMEOUT_MS         500      // no valid frame for this long -> failsafe
+#define RELEASE_ON_TIMEOUT false    // false = hold last position, true = go limp
+
+// Safe travel for each channel. Set these to what YOUR printed arm can do
+// without hitting a mechanical stop. Frames are clamped to this range.
+const float LIM_MIN[NUM_CH]   = {   0,   0,   0,   0,   0,    0,   0,   0,    0,   0,   0 };
+const float LIM_MAX[NUM_CH]   = { 180, 180, 180, 180, 180,  180, 180, 180,  180, 180, 180 };
+// Where each servo goes at power-up (fingers open, everything else centred).
+const float START_POS[NUM_CH] = {   0,   0,   0,   0,   0,   90,  90,  90,   90,  90,  90 };
+// -----------------------------------------------------
+
+Adafruit_PWMServoDriver pwm(0x40);
+
+float cur[NUM_CH];
+float tgt[NUM_CH];
+bool  released = false;
+bool  failsafe = false;
+unsigned long lastRx = 0;
+unsigned long lastStep = 0;
+
+char lineBuf[128];
+uint8_t lineLen = 0;
+
+void writeServo(uint8_t ch, float deg) {
+  deg = constrain(deg, 0.0f, 180.0f);
+  float us = PULSE_MIN_US + (deg / 180.0f) * (PULSE_MAX_US - PULSE_MIN_US);
+  pwm.writeMicroseconds(ch, (uint16_t)us);
+}
+
+void releaseAll() {
+  for (uint8_t i = 0; i < NUM_CH; i++) pwm.setPWM(i, 0, 4096);  // full off
+  released = true;
+}
+
+void handleLine(char* line) {
+  if (line[0] == 'S' && line[1] == ',') {
+    float v[NUM_CH];
+    char* p = line + 2;
+    for (uint8_t i = 0; i < NUM_CH; i++) {
+      char* end;
+      v[i] = (float)strtod(p, &end);
+      if (end == p) return;               // malformed frame: ignore all of it
+      p = end;
+      if (*p == ',') p++;
+    }
+    for (uint8_t i = 0; i < NUM_CH; i++) tgt[i] = constrain(v[i], LIM_MIN[i], LIM_MAX[i]);
+    lastRx = millis();
+    failsafe = false;
+  } else if (line[0] == 'R') {
+    releaseAll();
+    Serial.println(F("RELEASED"));
+  } else if (line[0] == 'H') {
+    released = false;
+    for (uint8_t i = 0; i < NUM_CH; i++) writeServo(i, cur[i]);
+    Serial.println(F("HOLDING"));
+  } else if (line[0] == 'P') {
+    Serial.println(F("PONG"));
+  }
+}
+
+void setup() {
+  Serial.begin(BAUD);
+  Wire.begin();
+  pwm.begin();
+  pwm.setOscillatorFrequency(27000000);   // typical PCA9685 clock; adjust if servos drift
+  pwm.setPWMFreq(50);                     // 50 Hz for analog servos
+  delay(10);
+
+  for (uint8_t i = 0; i < NUM_CH; i++) {
+    cur[i] = tgt[i] = START_POS[i];
+    writeServo(i, cur[i]);
+  }
+  lastRx = lastStep = millis();
+  Serial.println(F("Dactyl arm ready"));
+}
+
+void loop() {
+  // 1. Read serial into a line buffer
+  while (Serial.available()) {
+    char c = (char)Serial.read();
+    if (c == '\n' || c == '\r') {
+      if (lineLen > 0) {
+        lineBuf[lineLen] = 0;
+        handleLine(lineBuf);
+        lineLen = 0;
+      }
+    } else if (lineLen < sizeof(lineBuf) - 1) {
+      lineBuf[lineLen++] = c;
+    } else {
+      lineLen = 0;                        // overflow: drop the line
+    }
+  }
+
+  // 2. Failsafe if the computer stops talking
+  if (!failsafe && millis() - lastRx > TIMEOUT_MS) {
+    failsafe = true;
+    if (RELEASE_ON_TIMEOUT) releaseAll();
+    // otherwise targets stay where they are and the arm simply holds
+  }
+
+  // 3. Move every servo toward its target, limited to MAX_DPS
+  unsigned long now = millis();
+  if (now - lastStep >= 10) {
+    float dt = (now - lastStep) / 1000.0f;
+    lastStep = now;
+    float maxStep = MAX_DPS * dt;
+    for (uint8_t i = 0; i < NUM_CH; i++) {
+      float d = tgt[i] - cur[i];
+      cur[i] += constrain(d, -maxStep, maxStep);
+      if (!released) writeServo(i, cur[i]);
+    }
+  }
+}
+</script>
+
+<script type="module">
+/* ============================================================================
+   Dactyl: hand tracking to servo commands
+   1. MediaPipe Hand Landmarker finds 21 landmarks per hand (runs locally).
+   2. Joint angles give finger curl; the palm plane gives wrist roll/pitch/yaw.
+   3. Values are calibrated, normalised, smoothed, mapped to servo angles,
+      speed-limited, and streamed over Web Serial.
+   ========================================================================== */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const RAD = 180 / Math.PI;
+
+const TASKS_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+const WASM_URL  = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+
+// <MATH>
+/* ---------- Geometry ---------- */
+const V = {
+  sub:  (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }),
+  dot:  (a, b) => a.x * b.x + a.y * b.y + a.z * b.z,
+  cross:(a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x }),
+  len:  a => Math.hypot(a.x, a.y, a.z),
+  norm: a => { const l = Math.hypot(a.x, a.y, a.z) || 1; return { x: a.x / l, y: a.y / l, z: a.z / l }; },
+  scale:(a, k) => ({ x: a.x * k, y: a.y * k, z: a.z * k }),
+};
+const comp = (v, i) => i === 0 ? v.x : i === 1 ? v.y : v.z;
+
+// Angle in degrees between two consecutive bone vectors (0 = straight).
+function bendDeg(u, v) {
+  const d = V.dot(u, v) / ((V.len(u) * V.len(v)) || 1);
+  return Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI;
+}
+// Landmark chains: wrist, then each finger's knuckle to tip.
+const FIL = ['thumb', 'index', 'middle', 'ring', 'pinky'];
+const CHAINS = { thumb: [0,1,2,3,4], index: [0,5,6,7,8], middle: [0,9,10,11,12], ring: [0,13,14,15,16], pinky: [0,17,18,19,20] };
+
+// Total flexion of a finger: the sum of its three joint bends, in degrees.
+function fingerCurl(world, chain) {
+  const p = chain.map(i => world[i]);
+  let sum = 0;
+  for (let i = 1; i < p.length - 1; i++) sum += bendDeg(V.sub(p[i], p[i - 1]), V.sub(p[i + 1], p[i]));
+  return sum;
+}
+
+// Palm coordinate frame in camera space (columns): ex across palm, ey along fingers, ez out of the palm.
+// Camera axes: x right, y down, z away from the camera.
+function palmFrame(world, isRight) {
+  const ey = V.norm(V.sub(world[9], world[0]));
+  const across = V.sub(world[5], world[17]);
+  let n = V.norm(V.cross(ey, across));
+  if (isRight) n = V.scale(n, -1);               // keep the normal pointing out of the palm for both hands
+  const ez = V.norm(V.sub(n, V.scale(ey, V.dot(n, ey))));
+  const ex = V.cross(ey, ez);
+  return [ex, ey, ez];
+}
+const matFromCols = c => [0, 1, 2].map(r => [0, 1, 2].map(k => comp(c[k], r)));
+const matMulT = (A, B) => {                        // A^T * B
+  const R = [[0,0,0],[0,0,0],[0,0,0]];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { let s = 0; for (let k = 0; k < 3; k++) s += A[k][i] * B[k][j]; R[i][j] = s; }
+  return R;
+};
+function orthonormalize(M) {                       // Gram-Schmidt on the columns of M
+  const c = [0, 1, 2].map(k => ({ x: M[0][k], y: M[1][k], z: M[2][k] }));
+  const ex = V.norm(c[0]);
+  const ey = V.norm(V.sub(c[1], V.scale(ex, V.dot(c[1], ex))));
+  const ez = V.cross(ex, ey);
+  return matFromCols([ex, ey, ez]);
+}
+// Rrel = Rz(yaw) * Rx(pitch) * Ry(roll), the hand's rotation relative to the calibrated neutral pose.
+function eulerFromRel(R) {
+  const c = v => Math.max(-1, Math.min(1, v));
+  return {
+    pitch: Math.asin(c(R[2][1])) * 180 / Math.PI,
+    roll:  Math.atan2(-R[2][0], R[2][2]) * 180 / Math.PI,
+    yaw:   Math.atan2(-R[0][1], R[1][1]) * 180 / Math.PI,
+  };
+}
+// Hand position in the frame plus an approximate distance. Real hand size comes from the metric
+// world landmarks, so the distance estimate doesn't change when you rotate your hand.
+function handMetrics(lm, world, aspect) {
+  let cx = 0, cy = 0;
+  for (const i of [0, 5, 9, 13, 17]) { cx += lm[i].x; cy += lm[i].y; }
+  cx /= 5; cy /= 5;
+  const imgLen = Math.hypot((lm[9].x - lm[0].x) * aspect, lm[9].y - lm[0].y);   // in frame heights
+  const wLen = V.len(V.sub(world[9], world[0]));                                // in metres
+  return { x: 1 - cx, y: 1 - cy, distCm: imgLen > 1e-4 ? (wLen / imgLen) * 100 : 0, framePerM: imgLen / (wLen || 1) };
+}
+
+/* ---------- One Euro filter: smooth when slow, responsive when fast ---------- */
+class OneEuro {
+  constructor() { this.t = null; this.x = 0; this.dx = 0; }
+  static alpha(dt, fc) { const tau = 1 / (2 * Math.PI * fc); return 1 / (1 + tau / dt); }
+  reset() { this.t = null; }
+  filter(v, t, minCut, beta) {
+    if (this.t === null) { this.t = t; this.x = v; this.dx = 0; return v; }
+    const dt = Math.max(1e-3, t - this.t); this.t = t;
+    this.dx += OneEuro.alpha(dt, 1.0) * ((v - this.x) / dt - this.dx);
+    const fc = minCut + beta * Math.abs(this.dx);
+    this.x += OneEuro.alpha(dt, fc) * (v - this.x);
+    return this.x;
+  }
+}
+// </MATH>
+
+/* ---------- Channel definitions (order = servo channel on the board) ---------- */
+const DEFAULT_CH = [
+  { key:'thumb',  name:'Thumb',      sub:'finger curl',           color:'--c-thumb',  enabled:true,  in:[20,110],    out:[0,180], rest:0,  invert:false, unit:'°',   dec:0, step:1 },
+  { key:'index',  name:'Index',      sub:'finger curl',           color:'--c-index',  enabled:true,  in:[15,220],    out:[0,180], rest:0,  invert:false, unit:'°',   dec:0, step:1 },
+  { key:'middle', name:'Middle',     sub:'finger curl',           color:'--c-middle', enabled:true,  in:[15,220],    out:[0,180], rest:0,  invert:false, unit:'°',   dec:0, step:1 },
+  { key:'ring',   name:'Ring',       sub:'finger curl',           color:'--c-ring',   enabled:true,  in:[15,220],    out:[0,180], rest:0,  invert:false, unit:'°',   dec:0, step:1 },
+  { key:'pinky',  name:'Pinky',      sub:'finger curl',           color:'--c-pinky',  enabled:true,  in:[15,220],    out:[0,180], rest:0,  invert:false, unit:'°',   dec:0, step:1 },
+  { key:'roll',   name:'Wrist roll', sub:'forearm twist',         color:'--c-roll',   enabled:true,  in:[-80,80],    out:[0,180], rest:90, invert:false, unit:'°',   dec:0, step:1 },
+  { key:'pitch',  name:'Wrist pitch',sub:'tilt up and down',      color:'--c-pitch',  enabled:true,  in:[-60,60],    out:[0,180], rest:90, invert:false, unit:'°',   dec:0, step:1 },
+  { key:'yaw',    name:'Wrist yaw',  sub:'swing left and right',  color:'--c-yaw',    enabled:true,  in:[-45,45],    out:[0,180], rest:90, invert:false, unit:'°',   dec:0, step:1 },
+  { key:'posx',   name:'Arm swing',  sub:'hand left and right',   color:'--c-posx',   enabled:false, in:[0.25,0.75], out:[0,180], rest:90, invert:false, unit:'',    dec:2, step:0.01 },
+  { key:'posy',   name:'Arm lift',   sub:'hand up and down',      color:'--c-posy',   enabled:false, in:[0.25,0.75], out:[0,180], rest:90, invert:false, unit:'',    dec:2, step:0.01 },
+  { key:'reach',  name:'Arm reach',  sub:'hand toward camera',    color:'--c-reach',  enabled:false, in:[30,65],     out:[0,180], rest:90, invert:true,  unit:' cm', dec:0, step:1 },
+];
+const N = DEFAULT_CH.length;
+const DEFAULT_S = { smooth:55, hand:'right', flipLabels:false, minConf:60, rate:30, maxSpeed:400, onLost:'hold', baud:'115200', res:'720', camId:'', showSkel:true, showAxes:true };
+const RZERO_DEFAULT = [[1,0,0],[0,-1,0],[0,0,-1]];      // palm to camera, fingers up
+
+const state = {
+  chan: DEFAULT_CH.map(c => ({ ...c, in: [...c.in], out: [...c.out] })),
+  s: { ...DEFAULT_S },
+  Rzero: RZERO_DEFAULT.map(r => [...r]),
+  raw: new Array(N).fill(0),
+  t:   new Array(N).fill(0.5),
+  target: DEFAULT_CH.map(c => c.rest),
+  cur:    DEFAULT_CH.map(c => c.rest),
+  hist: [],
+  cam: 'off', demo: false,
+  hand: null, hasHand: false, lastSeen: 0, Rabs: null, axes: null, metrics: null,
+  fps: 0, latency: 0, armed: false, capturing: false,
+};
+const filters = Array.from({ length: N }, () => new OneEuro());
+
+/* ---------- Persistence ---------- */
+const LS_KEY = 'dactyl.v1';
+let saveTimer = 0;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        chan: state.chan.map(c => ({ enabled: c.enabled, in: c.in, out: c.out, rest: c.rest, invert: c.invert })),
+        Rzero: state.Rzero, s: state.s,
+      }));
+    } catch {}
+  }, 250);
+}
+function load() {
+  try {
+    const j = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    if (!j) return;
+    if (Array.isArray(j.chan)) j.chan.forEach((c, i) => { if (state.chan[i] && c) Object.assign(state.chan[i], { enabled: !!c.enabled, in: c.in, out: c.out, rest: c.rest, invert: !!c.invert }); });
+    if (Array.isArray(j.Rzero)) state.Rzero = j.Rzero;
+    if (j.s) Object.assign(state.s, j.s);
+  } catch {}
+}
+load();
+
+/* ---------- Small UI helpers ---------- */
+function toast(msg, kind = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind; el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), kind === 'err' ? 6500 : 3500);
+}
+const cssCache = new Map();
+const cssVar = n => { let v = cssCache.get(n); if (v === undefined) { v = getComputedStyle(document.documentElement).getPropertyValue(n).trim(); cssCache.set(n, v); } return v; };
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => cssCache.clear());
+const fmt = (c, v) => (c.unit === ' cm' ? Math.round(v) : v.toFixed(c.dec)) + c.unit;
+
+/* ============================================================================
+   Tracking
+   ========================================================================== */
+const video = $('#cam'), view = $('#view'), vctx = view.getContext('2d');
+let landmarker = null;
+
+async function initLandmarker() {
+  if (landmarker) return landmarker;
+  setEmpty('Loading the tracking model…', 'This happens once per session and needs an internet connection.', false);
+  const mod = await import(TASKS_URL);
+  const fileset = await mod.FilesetResolver.forVisionTasks(WASM_URL);
+  const opts = delegate => ({
+    baseOptions: { modelAssetPath: MODEL_URL, delegate },
+    runningMode: 'VIDEO', numHands: 2,
+    minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
+  });
+  try { landmarker = await mod.HandLandmarker.createFromOptions(fileset, opts('GPU')); }
+  catch (e) { console.warn('GPU delegate unavailable, using CPU', e); landmarker = await mod.HandLandmarker.createFromOptions(fileset, opts('CPU')); }
+  return landmarker;
+}
+
+async function startCamera() {
+  if (state.cam !== 'off') return;
+  state.cam = 'loading'; refreshCamUi();
+  try {
+    await initLandmarker();
+    setEmpty('Waiting for camera permission…', 'Choose Allow in your browser prompt.', false);
+    const h = +state.s.res;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { deviceId: state.s.camId ? { exact: state.s.camId } : undefined, width: { ideal: h * 16 / 9 }, height: { ideal: h }, frameRate: { ideal: 60 } },
+    });
+    video.srcObject = stream;
+    await video.play();
+    view.width = video.videoWidth; view.height = video.videoHeight;
+    $('#stage').style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+    state.cam = 'live';
+    populateCameras();
+    refreshCamUi();
+  } catch (e) {
+    console.error(e);
+    state.cam = 'off'; refreshCamUi();
+    const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+    const noCam = e && (e.name === 'NotFoundError' || e.name === 'OverconstrainedError');
+    if (denied) setEmpty('Camera access was blocked', 'Allow camera access for this page in your browser settings, then try again.', true);
+    else if (noCam) setEmpty('No camera found', 'Connect a webcam, or choose another device in the Tracking tab.', true);
+    else setEmpty('Couldn’t start tracking', 'The tracking model loads from a CDN. Check your connection and try again, or use the signal generator to test the arm without a camera.', true);
+  }
+}
+function stopCamera() {
+  if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  video.srcObject = null;
+  state.cam = 'off'; state.hand = null; state.hasHand = false;
+  disarm('Camera stopped');
+  vctx.clearRect(0, 0, view.width, view.height);
+  setEmpty('Camera is off', 'Start the camera to track your hand. Video is processed in this browser tab and is never uploaded.', true);
+  refreshCamUi();
+}
+async function populateCameras() {
+  try {
+    const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+    const sel = $('#sCam');
+    sel.innerHTML = '<option value="">Default camera</option>' + devs.map((d, i) => `<option value="${d.deviceId}">${d.label || 'Camera ' + (i + 1)}</option>`).join('');
+    sel.value = state.s.camId;
+  } catch {}
+}
+function setEmpty(title, text, showButtons) {
+  $('#emptyTitle').textContent = title; $('#emptyText').textContent = text;
+  $('#emptyBtns').hidden = !showButtons;
+  $('#empty').hidden = false;
+}
+function refreshCamUi() {
+  const live = state.cam === 'live';
+  $('#btnCam').textContent = live ? 'Stop camera' : state.cam === 'loading' ? 'Starting…' : 'Start camera';
+  $('#btnCam').disabled = state.cam === 'loading';
+  $('#btnCam').classList.toggle('primary', !live);
+  $('#empty').hidden = live;
+  $('#hud').hidden = !(live || state.demo);
+}
+
+// Turn a MediaPipe result into the picked hand (or nothing).
+function pickHand(res) {
+  let pick = null;
+  if (!res || !res.landmarks) return null;
+  const H = res.handedness || res.handednesses || [];
+  for (let i = 0; i < res.landmarks.length; i++) {
+    const cat = H[i] && H[i][0];
+    if (!cat || cat.score * 100 < state.s.minConf) continue;
+    // MediaPipe assumes a mirrored selfie image; we feed the raw frame, so its labels are swapped.
+    const right = (cat.categoryName === 'Left') !== state.s.flipLabels;
+    if (state.s.hand !== 'any' && right !== (state.s.hand === 'right')) continue;
+    if (!pick || cat.score > pick.score) pick = { lm: res.landmarks[i], world: res.worldLandmarks[i], right, score: cat.score };
+  }
+  return pick;
+}
+function measureHand(h, aspect) {
+  const raw = new Array(N);
+  FIL.forEach((k, i) => { raw[i] = fingerCurl(h.world, CHAINS[k]); });
+  const F = palmFrame(h.world, h.right);
+  const Rabs = matFromCols(F);
+  const e = eulerFromRel(matMulT(state.Rzero, Rabs));
+  raw[5] = e.roll; raw[6] = e.pitch; raw[7] = e.yaw;
+  const m = handMetrics(h.lm, h.world, aspect);
+  raw[8] = m.x; raw[9] = m.y; raw[10] = m.distCm;
+  return { raw, Rabs, F, m };
+}
+function handleResult(res, now) {
+  const pick = pickHand(res);
+  if (pick) {
+    if (now - state.lastSeen > 500) filters.forEach(f => f.reset());          // reacquired: don't drag old values
+    const m = measureHand(pick, video.videoWidth / video.videoHeight);
+    Object.assign(state, { hand: pick, hasHand: true, lastSeen: now, Rabs: m.Rabs, axes: m.F, metrics: m.m });
+    ingest(m.raw, now / 1000);
+  } else {
+    state.hand = null; state.hasHand = false;
+  }
+}
+
+// Calibrated value -> 0..1 -> smoothed -> servo angle
+function filterParams() {
+  const k = state.s.smooth / 100;
+  return { minCut: 12 * Math.pow(0.03, k), beta: 4 };
+}
+function ingest(raw, tSec) {
+  state.raw = raw;
+  const { minCut, beta } = filterParams();
+  for (let i = 0; i < N; i++) {
+    const c = state.chan[i];
+    let t = (raw[i] - c.in[0]) / ((c.in[1] - c.in[0]) || 1);
+    t = filters[i].filter(clamp(t, 0, 1), tSec, minCut, beta);
+    state.t[i] = t;
+    const u = c.invert ? 1 - t : t;
+    state.target[i] = c.out[0] + u * (c.out[1] - c.out[0]);
+  }
+}
+
+/* ---------- Signal generator (no camera needed) ---------- */
+function demoRaw(t) {
+  const raw = new Array(N);
+  for (let i = 0; i < 5; i++) {
+    const c = state.chan[i], k = 0.5 + 0.5 * Math.sin(t * 1.5 - i * 0.55);
+    raw[i] = c.in[0] + k * (c.in[1] - c.in[0]);
+  }
+  const mid = i => (state.chan[i].in[0] + state.chan[i].in[1]) / 2, half = i => Math.abs(state.chan[i].in[1] - state.chan[i].in[0]) / 2;
+  raw[5] = mid(5) + 0.8 * half(5) * Math.sin(t * 0.7);
+  raw[6] = mid(6) + 0.6 * half(6) * Math.sin(t * 0.5 + 1);
+  raw[7] = mid(7) + 0.7 * half(7) * Math.sin(t * 0.9 + 2);
+  raw[8] = mid(8) + 0.7 * half(8) * Math.sin(t * 0.4);
+  raw[9] = mid(9) + 0.7 * half(9) * Math.sin(t * 0.6 + 0.5);
+  raw[10] = mid(10) + 0.7 * half(10) * Math.sin(t * 0.3 + 1);
+  return raw;
+}
+function setDemo(on) {
+  state.demo = on;
+  filters.forEach(f => f.reset());
+  $('#btnDemo').setAttribute('aria-pressed', String(on));
+  if (on) { state.hand = null; if (state.cam !== 'live') setEmpty('Signal generator is running', 'Test motion is driving every channel. Connect the arm and start sending to check your servos, or switch it off and start the camera.', false); }
+  else if (state.cam === 'off') setEmpty('Camera is off', 'Start the camera to track your hand. Video is processed in this browser tab and is never uploaded.', true);
+  refreshCamUi();
+}
+
+/* ============================================================================
+   Calibration
+   ========================================================================== */
+async function capture(kind, quiet) {
+  if (state.capturing) return;
+  if (!state.hasHand || state.demo) { toast('Show your hand to the camera first. The signal generator can’t be calibrated.', 'err'); return false; }
+  state.capturing = true;
+  const prompts = {
+    open:   'Open your hand wide, fingers spread',
+    fist:   'Make a tight fist',
+    zero:   'Hold your hand up, palm facing the camera, fingers up',
+    center: 'Hold your hand where you want the neutral position',
+  };
+  const cap = $('#cap'); cap.hidden = false;
+  for (let n = 3; n > 0; n--) { $('#capN').textContent = n; $('#capM').textContent = prompts[kind]; await sleep(1000); }
+  $('#capN').textContent = ''; $('#capM').textContent = 'Hold still…';
+  const samples = [], t0 = performance.now();
+  while (performance.now() - t0 < 900) { if (state.hasHand && state.Rabs) samples.push({ raw: state.raw.slice(), R: state.Rabs }); await sleep(30); }
+  cap.hidden = true; state.capturing = false;
+  if (samples.length < 5) { toast('Lost sight of your hand, so that step was skipped.', 'err'); return false; }
+  const avg = i => samples.reduce((a, s) => a + s.raw[i], 0) / samples.length;
+  if (kind === 'open' || kind === 'fist') {
+    for (let i = 0; i < 5; i++) state.chan[i].in[kind === 'open' ? 0 : 1] = +avg(i).toFixed(1);
+    const spread = state.chan.slice(0, 5).map((c, i) => Math.abs(c.in[1] - c.in[0]) / (i === 0 ? 0.5 : 1));   // thumb moves less, so it gets a looser test
+    if (Math.min(...spread) < 40) toast('Open and fist look too similar. Repeat both steps with a clearer difference.', 'err');
+    else if (!quiet) toast(kind === 'open' ? 'Open hand saved' : 'Fist saved');
+  } else if (kind === 'zero') {
+    const M = [[0,0,0],[0,0,0],[0,0,0]];
+    samples.forEach(s => { for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) M[r][c] += s.R[r][c] / samples.length; });
+    state.Rzero = orthonormalize(M);
+    if (!quiet) toast('Wrist neutral saved');
+  } else if (kind === 'center') {
+    for (const i of [8, 9, 10]) { const c = state.chan[i], half = (c.in[1] - c.in[0]) / 2, m = avg(i); c.in = [+(m - half).toFixed(3), +(m + half).toFixed(3)]; }
+    if (!quiet) toast('Center saved');
+  }
+  filters.forEach(f => f.reset());
+  syncRows(true); save();
+  return true;
+}
+async function calibrateAll() {
+  for (const k of ['open', 'fist', 'zero', 'center']) { if (!(await capture(k, true))) return; }
+  toast('Calibration complete');
+}
+
+/* ============================================================================
+   Arm output (Web Serial)
+   ========================================================================== */
+const serial = { port: null, writer: null, reader: null, readDone: null, connected: false, busy: false };
+const enc = new TextEncoder();
+const logEl = $('#log');
+function log(msg, cls = 'rx') {
+  const d = document.createElement('div'); d.className = cls; d.textContent = msg;
+  logEl.appendChild(d);
+  while (logEl.childElementCount > 300) logEl.firstChild.remove();
+  logEl.scrollTop = logEl.scrollHeight;
+}
+const hasSerial = 'serial' in navigator;
+
+async function connectSerial() {
+  if (!hasSerial) { toast('Web Serial needs Chrome or Edge on a computer.', 'err'); return; }
+  try {
+    const port = await navigator.serial.requestPort();
+    await port.open({ baudRate: +state.s.baud });
+    serial.port = port; serial.writer = port.writable.getWriter(); serial.connected = true;
+    log(`Connected at ${state.s.baud} baud`, 'sys');
+    serial.readDone = readLoop(port);
+    port.addEventListener?.('disconnect', () => { log('Device unplugged', 'err'); disconnectSerial(); });
+    refreshLinkUi();
+  } catch (e) {
+    if (e.name !== 'NotFoundError') { log('Connect failed: ' + e.message, 'err'); toast('Couldn’t open the port. Close the Arduino Serial Monitor or any other app using it.', 'err'); }
+  }
+}
+async function readLoop(port) {
+  const reader = port.readable.getReader(); serial.reader = reader;
+  const dec = new TextDecoder(); let buf = '';
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (line) log(line, 'rx'); }
+    }
+  } catch (e) { /* port closed */ }
+  finally { try { reader.releaseLock(); } catch {} }
+}
+async function disconnectSerial() {
+  disarm();
+  if (!serial.connected) return;
+  serial.connected = false;
+  try { await serial.reader?.cancel(); } catch {}
+  try { await serial.readDone; } catch {}
+  try { serial.writer?.releaseLock(); } catch {}
+  try { await serial.port?.close(); } catch {}
+  serial.port = serial.writer = serial.reader = null;
+  log('Disconnected', 'sys');
+  refreshLinkUi();
+}
+function sendRaw(str) {
+  if (!serial.connected || !serial.writer || serial.busy) return false;
+  serial.busy = true;
+  serial.writer.write(enc.encode(str)).catch(e => { log('Write failed: ' + e.message, 'err'); disconnectSerial(); }).finally(() => { serial.busy = false; });
+  return true;
+}
+function arm() {
+  if (!serial.connected) { toast('Connect to the arm first.', 'err'); return; }
+  state.armed = true; refreshLinkUi(); log('Sending to arm', 'sys');
+}
+function disarm(why) {
+  if (!state.armed) return;
+  state.armed = false; refreshLinkUi();
+  if (why) toast('Output stopped: ' + why);
+  log('Output stopped' + (why ? ' (' + why + ')' : ''), 'sys');
+}
+
+/* Output loop: apply the speed limit, then send one frame */
+let tickTimer = 0, lastTick = performance.now();
+const rec = { on: false, rows: [], t0: 0 };
+function tick() {
+  const now = performance.now(), dt = Math.min(0.25, (now - lastTick) / 1000); lastTick = now;
+  const lost = !state.demo && (now - state.lastSeen > 400);
+  const s = state.s;
+  const tgt = state.chan.map((c, i) => (!c.enabled || (lost && s.onLost === 'rest')) ? c.rest : state.target[i]);
+  const maxStep = s.maxSpeed * dt;
+  for (let i = 0; i < N; i++) state.cur[i] += clamp(tgt[i] - state.cur[i], -maxStep, maxStep);
+
+  state.hist.push(state.cur.slice());
+  const keep = Math.round(8 * s.rate); if (state.hist.length > keep) state.hist.splice(0, state.hist.length - keep);
+
+  if (rec.on && (state.hasHand || state.demo)) {
+    if (rec.rows.length < 100000) rec.rows.push([Math.round(now - rec.t0), ...state.raw.map((v, i) => +v.toFixed(state.chan[i].dec + 2)), ...state.cur.map(v => +v.toFixed(1))]);
+  }
+  if (state.armed && serial.connected && !(lost && s.onLost === 'pause')) {
+    const frame = 'S,' + state.cur.map(v => Math.round(clamp(v, 0, 180))).join(',') + '\n';
+    if (sendRaw(frame)) $('#lastFrame').textContent = 'Last frame: ' + frame.trim();
+  }
+}
+function restartTick() { clearInterval(tickTimer); lastTick = performance.now(); tickTimer = setInterval(tick, 1000 / state.s.rate); }
+
+/* ============================================================================
+   Drawing
+   ========================================================================== */
+const PALM_BONES = [[0,5],[5,9],[9,13],[13,17],[17,0]];
+const FINGER_BONES = {
+  thumb:  [[0,1],[1,2],[2,3],[3,4]], index: [[5,6],[6,7],[7,8]], middle: [[9,10],[10,11],[11,12]],
+  ring:   [[13,14],[14,15],[15,16]], pinky: [[17,18],[18,19],[19,20]],
+};
+function drawView() {
+  const W = view.width, H = view.height;
+  if (state.cam !== 'live' || !video.videoWidth) return;
+  vctx.save(); vctx.translate(W, 0); vctx.scale(-1, 1); vctx.drawImage(video, 0, 0, W, H); vctx.restore();
+  vctx.fillStyle = 'rgba(8,10,12,.18)'; vctx.fillRect(0, 0, W, H);
+  const h = state.hand; if (!h || state.demo) return;
+  const P = i => [(1 - h.lm[i].x) * W, h.lm[i].y * H];
+  const lw = Math.max(2, W / 260);
+  if (state.s.showSkel) {
+    vctx.lineCap = 'round'; vctx.lineJoin = 'round';
+    vctx.strokeStyle = 'rgba(255,255,255,.55)'; vctx.lineWidth = lw;
+    vctx.beginPath(); PALM_BONES.forEach(([a, b]) => { vctx.moveTo(...P(a)); vctx.lineTo(...P(b)); }); vctx.stroke();
+    FIL.forEach(k => {
+      vctx.strokeStyle = cssVar('--c-' + k); vctx.lineWidth = lw * 1.7;
+      vctx.beginPath(); FINGER_BONES[k].forEach(([a, b]) => { vctx.moveTo(...P(a)); vctx.lineTo(...P(b)); }); vctx.stroke();
+    });
+    for (let i = 0; i < 21; i++) {
+      const [x, y] = P(i), tip = i > 0 && i % 4 === 0;
+      vctx.beginPath(); vctx.arc(x, y, lw * (tip ? 2.1 : 1.4), 0, 7);
+      vctx.fillStyle = '#fff'; vctx.fill(); vctx.lineWidth = 1.5; vctx.strokeStyle = 'rgba(0,0,0,.6)'; vctx.stroke();
+    }
+  }
+  if (state.s.showAxes && state.axes && state.metrics) {
+    const m = state.metrics, ox = m.x * W, oy = (1 - m.y) * H, L = m.framePerM * H * 0.06;
+    [[state.axes[0], '#ff5a5f'], [state.axes[1], '#7bd88f'], [state.axes[2], '#6aa9ff']].forEach(([a, col]) => {
+      vctx.strokeStyle = col; vctx.lineWidth = lw * 1.6; vctx.beginPath(); vctx.moveTo(ox, oy); vctx.lineTo(ox - a.x * L, oy + a.y * L); vctx.stroke();
+    });
+    vctx.beginPath(); vctx.arc(ox, oy, lw * 1.8, 0, 7); vctx.fillStyle = '#fff'; vctx.fill();
+  }
+}
+
+// Retargeted hand: side-profile fingers driven by curl, plate tilted by wrist roll/pitch/yaw.
+const FINGER_GEOM = {
+  thumb:  { x:-72, y:34, a:-140, seg:[30,24,20], bend:[45,50,40] },
+  index:  { x:-48, y:0,  a:-94,  seg:[38,25,18], bend:[80,100,65] },
+  middle: { x:-16, y:0,  a:-90,  seg:[42,27,19], bend:[80,100,65] },
+  ring:   { x: 16, y:0,  a:-86,  seg:[38,25,18], bend:[80,100,65] },
+  pinky:  { x: 48, y:0,  a:-82,  seg:[30,20,16], bend:[80,100,65] },
+};
+const pv = $('#pv'), pctx = pv.getContext('2d');
+const poseVal = i => { const c = state.chan[i]; return c.in[0] + state.t[i] * (c.in[1] - c.in[0]); };
+function drawPreview() {
+  const g = pctx, W = pv.width / 2, H = pv.height / 2;
+  g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, W, H);
+  const roll = clamp(poseVal(5), -75, 75) / RAD, pitch = clamp(poseVal(6), -60, 60) / RAD, yaw = clamp(poseVal(7), -60, 60) / RAD;
+  g.save();
+  g.translate(W / 2, H * 0.62);
+  g.rotate(yaw * 0.8); g.scale(Math.max(.35, Math.cos(roll)), Math.max(.55, Math.cos(pitch)));
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  // palm
+  g.beginPath(); g.roundRect(-84, -4, 168, 66, 16);
+  g.fillStyle = cssVar('--panel2'); g.fill(); g.lineWidth = 2; g.strokeStyle = cssVar('--ink3'); g.stroke();
+  // wrist stub
+  g.fillStyle = cssVar('--panel2'); g.strokeStyle = cssVar('--ink3');
+  g.beginPath(); g.roundRect(-40, 62, 80, 26, 6); g.fill(); g.stroke();
+  FIL.forEach((k, i) => {
+    const G = FINGER_GEOM[k], c = state.chan[i], curl = clamp(state.t[i], 0, 1);
+    let x = G.x, y = G.y, a = G.a;
+    const col = cssVar(c.color);
+    g.globalAlpha = c.enabled ? 1 : .25;
+    const pts = [[x, y]];
+    G.seg.forEach((len, j) => {
+      a += curl * G.bend[j];
+      x += Math.cos(a / RAD) * len; y += Math.sin(a / RAD) * len; pts.push([x, y]);
+    });
+    g.strokeStyle = col; g.lineWidth = k === 'thumb' ? 15 : 13;
+    g.beginPath(); g.moveTo(...pts[0]); pts.slice(1).forEach(p => g.lineTo(...p)); g.stroke();
+    g.fillStyle = cssVar('--panel'); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.5;
+    pts.forEach((p, j) => { g.beginPath(); g.arc(p[0], p[1], j === pts.length - 1 ? 3 : 4, 0, 7); g.fill(); g.stroke(); });
+    g.globalAlpha = 1;
+  });
+  g.restore();
+}
+
+const chart = $('#chart'), cctx = chart.getContext('2d');
+function drawChart() {
+  const g = cctx, W = chart.width / 2, H = chart.height / 2;
+  g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, W, H);
+  const pad = { l: 34, r: 8, t: 10, b: 10 }, iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  g.font = '11px ' + cssVar('--f-body'); g.fillStyle = cssVar('--ink3'); g.strokeStyle = cssVar('--line'); g.lineWidth = 1;
+  [0, 45, 90, 135, 180].forEach(v => {
+    const y = pad.t + ih - (v / 180) * ih;
+    g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke();
+    g.textAlign = 'right'; g.fillText(v + '°', pad.l - 6, y + 4);
+  });
+  const n = Math.round(8 * state.s.rate), hist = state.hist;
+  if (hist.length < 2) return;
+  g.lineJoin = 'round'; g.lineWidth = 1.8;
+  state.chan.forEach((c, i) => {
+    if (!c.enabled) return;
+    g.strokeStyle = cssVar(c.color); g.beginPath();
+    hist.forEach((row, k) => {
+      const x = pad.l + iw * (1 - (hist.length - 1 - k) / n), y = pad.t + ih - (row[i] / 180) * ih;
+      k ? g.lineTo(x, y) : g.moveTo(x, y);
+    });
+    g.stroke();
+  });
+}
+
+/* ============================================================================
+   Channel table
+   ========================================================================== */
+const rowEls = [];
+function buildRows() {
+  const host = $('#chRows'); host.innerHTML = ''; rowEls.length = 0;
+  state.chan.forEach((c, i) => {
+    const row = document.createElement('div'); row.className = 'ch';
+    row.innerHTML = `
+      <div class="ch-main">
+        <span class="key" style="--k:var(${c.color})" title="Servo channel ${i}">${i}</span>
+        <div class="ch-name"><b>${c.name}</b><small>${c.sub}</small></div>
+        <div class="meter" aria-hidden="true" style="--k:var(${c.color})"><i></i></div>
+        <output class="ang" aria-label="${c.name} servo angle">0°</output>
+        <label class="sw" title="Send this channel to the arm"><input type="checkbox" data-f="enabled" aria-label="Use ${c.name}"><span></span></label>
+        <button class="chev" aria-expanded="false" aria-label="${c.name} settings"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5l4 4 4-4"/></svg></button>
+      </div>
+      <div class="ch-detail" hidden>
+        <label>Tracked value from<input type="number" data-f="in0" step="${c.step}"></label>
+        <label>Tracked value to<input type="number" data-f="in1" step="${c.step}"></label>
+        <label>Servo angle at start<input type="number" data-f="out0" min="0" max="180" step="1"></label>
+        <label>Servo angle at end<input type="number" data-f="out1" min="0" max="180" step="1"></label>
+        <label>Rest angle<input type="number" data-f="rest" min="0" max="180" step="1"></label>
+        <label class="check" style="align-self:end;padding-bottom:6px"><input type="checkbox" data-f="invert"> Reverse direction</label>
+        <div class="full">Live tracked value: <span class="live" data-f="live">0</span></div>
+      </div>`;
+    host.appendChild(row);
+    const q = f => row.querySelector(`[data-f="${f}"]`);
+    row.querySelector('.chev').addEventListener('click', e => {
+      const b = e.currentTarget, open = b.getAttribute('aria-expanded') !== 'true';
+      b.setAttribute('aria-expanded', String(open)); row.querySelector('.ch-detail').hidden = !open;
+    });
+    row.addEventListener('input', e => {
+      const f = e.target.dataset.f; if (!f) return;
+      const v = e.target.type === 'checkbox' ? e.target.checked : parseFloat(e.target.value);
+      if (typeof v === 'number' && Number.isNaN(v)) return;
+      if (f === 'enabled') c.enabled = v; else if (f === 'invert') c.invert = v;
+      else if (f === 'in0') c.in[0] = v; else if (f === 'in1') c.in[1] = v;
+      else if (f === 'out0') c.out[0] = clamp(v, 0, 180); else if (f === 'out1') c.out[1] = clamp(v, 0, 180);
+      else if (f === 'rest') c.rest = clamp(v, 0, 180);
+      row.classList.toggle('off', !c.enabled); save();
+    });
+    rowEls.push({ row, q, c });
+  });
+  syncRows(true);
+}
+// forceInputs rewrites the number boxes (after calibration/reset) without fighting the user's typing.
+function syncRows(forceInputs) {
+  rowEls.forEach(({ row, q, c }, i) => {
+    row.classList.toggle('off', !c.enabled);
+    if (forceInputs) {
+      q('enabled').checked = c.enabled; q('invert').checked = c.invert;
+      q('in0').value = c.in[0]; q('in1').value = c.in[1]; q('out0').value = c.out[0]; q('out1').value = c.out[1]; q('rest').value = c.rest;
+    }
+  });
+}
+function updateRows() {
+  rowEls.forEach(({ row, q, c }, i) => {
+    row.querySelector('.meter i').style.width = clamp(state.cur[i] / 180, 0, 1) * 100 + '%';
+    row.querySelector('.ang').textContent = Math.round(state.cur[i]) + '°';
+    if (!row.querySelector('.ch-detail').hidden) q('live').textContent = fmt(c, state.raw[i]);
+  });
+}
+
+/* ============================================================================
+   UI wiring
+   ========================================================================== */
+function setChip(id, s, text) { const el = $(id); el.dataset.s = s; el.querySelector('span').textContent = text; }
+function refreshLinkUi() {
+  $('#btnConnect').textContent = serial.connected ? 'Disconnect' : 'Connect to arm';
+  $('#btnConnect').classList.toggle('primary', !serial.connected);
+  $('#linkStat').textContent = serial.connected ? `Connected at ${state.s.baud} baud` : 'Not connected';
+  $('#btnArm').disabled = !serial.connected; $('#btnRelease').disabled = !serial.connected; $('#btnTx').disabled = !serial.connected;
+  $('#btnArm').textContent = state.armed ? 'Pause sending' : 'Start sending to arm';
+  $('#btnArm').classList.toggle('primary', !state.armed);
+  $('#btnStop').classList.toggle('armed', state.armed);
+  setChip('#chipLink', serial.connected ? 'ok' : 'off', serial.connected ? state.s.baud + ' baud' : 'not connected');
+  setChip('#chipOut', state.armed ? 'live' : 'off', state.armed ? 'sending' : 'off');
+}
+let uiT = 0;
+function updateUi(now) {
+  const cam = state.cam;
+  setChip('#chipCam', cam === 'live' ? 'ok' : cam === 'loading' ? 'warn' : 'off', cam === 'live' ? `live, ${Math.round(state.fps)} fps` : cam === 'loading' ? 'starting' : 'off');
+  let hs = 'off', ht = 'none', hud = 'No hand', conf = 0;
+  if (state.demo) { hs = 'warn'; ht = 'test signal'; hud = 'Signal generator'; conf = 100; }
+  else if (state.hand) { const side = state.hand.right ? 'Right' : 'Left'; hs = 'ok'; ht = `${side}, ${Math.round(state.hand.score * 100)}%`; hud = side + ' hand'; conf = Math.round(state.hand.score * 100); }
+  else if (cam === 'live') { hs = 'warn'; ht = 'not found'; }
+  setChip('#chipHand', hs, ht);
+  $('#hudHand').textContent = hud; $('#hudConfN').textContent = conf + '%'; $('#hudConf').style.setProperty('--w', conf + '%');
+  $('#hudFps').textContent = state.demo ? '' : `${Math.round(state.fps)} fps, ${state.latency.toFixed(0)} ms`;
+  $('#hudFps').hidden = state.demo;
+  updateRows(); drawPreview(); drawChart();
+  if (rec.on) $('#recStat').textContent = `Recording: ${rec.rows.length} rows, ${((performance.now() - rec.t0) / 1000).toFixed(1)} s`;
+}
+
+let lastVideoTime = -1, lastTs = 0, fpsCount = 0, fpsT = performance.now();
+function frame() {
+  requestAnimationFrame(frame);
+  const now = performance.now();
+  if (state.demo) {
+    state.hasHand = true; state.lastSeen = now; ingest(demoRaw(now / 1000), now / 1000);
+  } else if (state.cam === 'live' && landmarker && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
+    const ts = Math.max(now, lastTs + 1); lastTs = ts;
+    let res = null;
+    try { res = landmarker.detectForVideo(video, ts); } catch (e) { console.error(e); }
+    state.latency = performance.now() - now; fpsCount++;
+    handleResult(res, now);
+  }
+  if (now - fpsT >= 1000) { state.fps = fpsCount * 1000 / (now - fpsT); fpsCount = 0; fpsT = now; }
+  drawView();
+  if (now - uiT > 33) { uiT = now; updateUi(now); }
+}
+
+function bindRange(id, out, key, label, after) {
+  const el = $(id), o = $(out);
+  el.value = state.s[key]; o.textContent = label(state.s[key]);
+  el.addEventListener('input', () => { state.s[key] = +el.value; o.textContent = label(+el.value); save(); after && after(); });
+}
+function bindSeg(id, key) {
+  const el = $(id), sync = () => $$('button', el).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(state.s[key]))));
+  el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.s[key] = b.dataset.v; sync(); save(); filters.forEach(f => f.reset()); });
+  sync();
+}
+function bindCheck(id, key) { const el = $(id); el.checked = !!state.s[key]; el.addEventListener('change', () => { state.s[key] = el.checked; save(); }); }
+function bindSelect(id, key, after) { const el = $(id); el.value = state.s[key]; el.addEventListener('change', () => { state.s[key] = el.value; save(); after && after(); }); }
+
+// tabs
+$$('.tabs button').forEach(b => b.addEventListener('click', () => {
+  $$('.tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  $$('.panel').forEach(p => p.hidden = p.id !== 'tab-' + b.dataset.tab);
+}));
+
+buildRows();
+bindRange('#sSmooth', '#oSmooth', 'smooth', v => v + '%', () => filters.forEach(f => f.reset()));
+bindRange('#sConf', '#oConf', 'minConf', v => v + '%');
+bindRange('#sRate', '#oRate', 'rate', v => v + ' Hz', restartTick);
+bindRange('#sSpeed', '#oSpeed', 'maxSpeed', v => v + '°/s');
+bindSeg('#segHand', 'hand');
+bindCheck('#sFlip', 'flipLabels'); bindCheck('#sSkel', 'showSkel'); bindCheck('#sAxes', 'showAxes');
+bindSelect('#sLost', 'onLost'); bindSelect('#sBaud', 'baud');
+bindSelect('#sRes', 'res', () => { if (state.cam === 'live') { stopCamera(); startCamera(); } });
+$('#sCam').addEventListener('change', e => { state.s.camId = e.target.value; save(); if (state.cam === 'live') { stopCamera(); startCamera(); } });
+
+const camToggle = () => state.cam === 'live' ? stopCamera() : startCamera();
+$('#btnCam').addEventListener('click', camToggle);
+$('#btnCam2').addEventListener('click', startCamera);
+$('#btnDemo').addEventListener('click', () => setDemo(!state.demo));
+$('#btnDemo2').addEventListener('click', () => setDemo(true));
+$('#btnCalAll').addEventListener('click', calibrateAll);
+$('#btnCalOpen').addEventListener('click', () => capture('open'));
+$('#btnCalFist').addEventListener('click', () => capture('fist'));
+$('#btnCalZero').addEventListener('click', () => capture('zero'));
+$('#btnCalCenter').addEventListener('click', () => capture('center'));
+$('#btnReset').addEventListener('click', () => {
+  if (!confirm('Reset every channel range, the wrist calibration and all settings?')) return;
+  try { localStorage.removeItem(LS_KEY); } catch {}
+  state.chan.forEach((c, i) => Object.assign(c, { ...DEFAULT_CH[i], in: [...DEFAULT_CH[i].in], out: [...DEFAULT_CH[i].out] }));
+  state.Rzero = RZERO_DEFAULT.map(r => [...r]);
+  filters.forEach(f => f.reset()); syncRows(true); toast('Defaults restored');
+});
+
+$('#btnConnect').addEventListener('click', () => serial.connected ? disconnectSerial() : connectSerial());
+$('#btnArm').addEventListener('click', () => state.armed ? disarm() : arm());
+$('#btnStop').addEventListener('click', () => { disarm(); toast('Output stopped'); });
+$('#btnRelease').addEventListener('click', () => { disarm(); sendRaw('R\n'); log('Sent R (release)', 'tx'); });
+const sendLine = () => { const el = $('#txLine'), v = el.value.trim(); if (!v) return; if (sendRaw(v + '\n')) log('> ' + v, 'tx'); el.value = ''; };
+$('#btnTx').addEventListener('click', sendLine);
+$('#txLine').addEventListener('keydown', e => { if (e.key === 'Enter') sendLine(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && state.armed) { disarm(); toast('Output stopped'); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) disarm('tab hidden, tracking paused'); });
+
+// recording
+$('#btnRec').addEventListener('click', () => {
+  rec.on = !rec.on;
+  if (rec.on) { rec.rows = []; rec.t0 = performance.now(); }
+  $('#btnRec').textContent = rec.on ? 'Stop recording' : 'Start recording';
+  $('#btnRec').classList.toggle('primary', !rec.on);
+  $('#btnCsv').disabled = $('#btnClear').disabled = rec.on || !rec.rows.length;
+  if (!rec.on) $('#recStat').textContent = rec.rows.length ? `${rec.rows.length} rows ready to download` : 'Nothing recorded yet';
+});
+$('#btnClear').addEventListener('click', () => { rec.rows = []; $('#btnCsv').disabled = $('#btnClear').disabled = true; $('#recStat').textContent = 'Nothing recorded yet'; });
+function download(name, text, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('#btnCsv').addEventListener('click', () => {
+  const head = ['t_ms', ...state.chan.map(c => 'raw_' + c.key), ...state.chan.map(c => 'deg_' + c.key)];
+  download('dactyl-session.csv', [head.join(','), ...rec.rows.map(r => r.join(','))].join('\n'), 'text/csv');
+});
+
+// firmware
+const fwText = $('#fwSrc').textContent.replace(/^\n/, '').replace(/\n$/, '') + '\n';
+$('#fwView').textContent = fwText;
+$('#btnFwCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(fwText); toast('Sketch copied'); } catch { toast('Couldn’t copy. Use Download instead.', 'err'); } });
+$('#btnFwDl').addEventListener('click', () => download('arm_receiver.ino', fwText, 'text/plain'));
+
+// boot
+if (!hasSerial) $('#serialWarn').hidden = false;
+refreshLinkUi(); refreshCamUi(); restartTick();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
